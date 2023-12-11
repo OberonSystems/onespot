@@ -17,18 +17,20 @@
 (defn nil-check
   [{::osc/keys [id optional?] :as entity} value path]
   (when (and (nil? value) (not optional?))
-    {:path path :feedback {:code      :missing
-                           :message   "Value cannot be nil for a required entity."
-                           :entity-id id
-                           :value     value}}))
+    {:path     path
+     :feedback {:code      :missing
+                :message   "Value cannot be nil for a required entity."
+                :entity-id id
+                :value     value}}))
 
 (defn attr-check
   [{::osc/keys [id] :as entity} value path]
   (when-not (contains? value id)
-    {:path path :feedback {:code      :missing
-                           :message   (format "Attr: `%s` cannot find itself in hashmap value." id)
-                           :entity-id id
-                           :value     value}}))
+    {:path     path
+     :feedback {:code      :missing
+                :message   (format "Attr: `%s` cannot find itself in hashmap value." id)
+                :entity-id id
+                :value     value}}))
 
 (defn validator-check
   [{::osc/keys [validator] :as entity} value path]
@@ -36,6 +38,21 @@
     {:path path :feedback feedback}))
 
 (defn validate-entity
+  "Performs checks on any sort of entity.
+
+  There are three checks;
+
+  - nil-check: is the value nil and the required?
+
+  - attr-check: does the key exist for the attribute in the hashmap?
+
+    Similiar to the nil-check but gives more detail of the error.
+
+  - validator-check: runs the validator function associated with the
+    entity.
+
+
+  Recurses on `rec` and `series` entities."
   [{::osc/keys [id kind attr-kind series-kind optional?] :as entity}
    value
    path]
@@ -52,20 +69,20 @@
       ;; based on either a specific validator or on the one that is
       ;; provided with their referenced kind (a scalar or an entity).
       ::osc/attr   (let [attr-value (get value id)]
-                     (some-> (or (attr-check      entity value      path)
-                                 (nil-check       entity attr-value path)
-                                 (validator-check entity attr-value path)
+                     (some-> (or (attr-check      entity value      this-path)
+                                 (nil-check       entity attr-value this-path)
+                                 (validator-check entity attr-value this-path)
                                  (when-let [entity (osc/pull attr-kind)]
-                                   (validator-check entity attr-value path)))
+                                   (validator-check entity attr-value this-path)))
                              add-feedback!))
       ;;
       ;; For records, first check all of the attributes, then call the
       ;; validator on the record itself if all of the attributes
       ;; passed.
       ::osc/rec    (let [errors (->> (osc/attrs id)
-                                     (map (fn [{:osc/keys [id] :as attr}]
+                                     (map (fn [attr]
                                             ;; this will add any errors to *feedback*
-                                            (validate-entity attr value (conj this-path id))))
+                                            (validate-entity attr value this-path)))
                                      (remove nil?)
                                      seq)
                          error  (when-not errors
@@ -78,13 +95,13 @@
       ::osc/series (let [child-entity (osc/pull series-kind)
                          errors       (->> (get value id)
                                            (map (fn [idx value]
+                                                  ;; this will add any errors to *feedback*
                                                   (validate-entity child-entity value (conj this-path idx)))
                                                 (range))
                                            nil?
                                            seq)
                          error  (when-not errors
                                   (validator-check entity value this-path))]
-                     (add-feedback! errors)
                      (add-feedback! error)))))
 
 (defn validate
