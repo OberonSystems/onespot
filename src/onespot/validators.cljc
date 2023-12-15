@@ -62,6 +62,14 @@
     {:code    :bad-value
      :message "Must be a positive integer."}))
 
+(defn one-of?
+  [x values]
+  (when-not (contains? values x)
+    {:code    :bad-value
+     :message (format "Value `%s` must be one of `%s`" x values)
+     :value   x
+     :values  values}))
+
 #_
 (defn edn-map?
   [x]
