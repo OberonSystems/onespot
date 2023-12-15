@@ -5,85 +5,172 @@
             [onespot.core :refer :all :as osc]
             :reload))
 
+(defn code?
+  ([validation path code]
+   (and (= path (-> validation first :path))
+        (= code (-> validation first :feedback :code))))
+  ([validation code]
+   (= (-> validation
+          first
+          :feedback
+          :code)
+      code)))
+
 (defn register-scalars!
   []
   (clear!)
-  (scalar! ::string1 non-blank-string?)
-  (scalar! ::string2 non-blank-string?
+  (scalar! :string1 non-blank-string?)
+  (scalar! :string2 non-blank-string?
            ::osc/label       "My Label"
            ::osc/description "My Description")
-  (scalar! ::record-id positive-integer?))
+  (scalar! :record-id positive-integer?)
+  ;;
+  (scalar! :contact-type-enum #(one-of? % #{:mobile :email})))
 
 (defn register-attrs!
   []
   (register-scalars!)
-  (attr! ::person-id  ::record-id)
-  (attr! ::given-name ::string1)
-  (attr! ::family-name ::string1
-         ::osc/label "The Family Name"))
+  (attr! :person-id   :record-id)
+  (attr! :given-name  :string1)
+  (attr! :nickname    :string1)
+  (attr! :family-name :string1
+         ::osc/label "The Family Name")
+  ;;
+  (attr! :contact-type  :contact-type-enum)
+  (attr! :contact-value :string1))
 
 (deftest test-scalars-1
   (register-scalars!)
-  (is (= (label ::string1) "String 1"))
-  (is (= (validator ::string1) non-blank-string?))
+  (is (= (label     :string1) "String 1"))
+  (is (= (validator :string1) non-blank-string?))
 
-  (is (= (label       ::string2) "My Label"))
-  (is (= (description ::string2) "My Description"))
+  (is (= (label       :string2) "My Label"))
+  (is (= (description :string2) "My Description"))
 
-  (is (= (validate ::string1 nil)        [{:path []
-                                           :feedback {:code :missing
-                                                      :message "Value cannot be nil for a required entity."
-                                                      :entity-id :onespot.core-test/string1
-                                                      :value nil}}]))
-  (is (= (validate ::string1 "")         [{:path [], :feedback {:code    :bad-value
-                                                                :message "Must be a non blank string."}}]))
-  (is (= (validate ::string1 "a string") nil)))
+  (is (code? (validate :string1 nil) :missing-value))
+  (is (code? (validate :string1 "")  :bad-value))
+  (is (nil?  (validate :string1 "a string"))))
 
 (deftest test-attrs-1
   (register-attrs!)
 
-  (is (= (label ::given-name) "Given Name"))
-  (is (= (label ::family-name) "The Family Name"))
+  (is (= (label :given-name) "Given Name"))
+  (is (= (label :family-name) "The Family Name"))
   ;;
-  (is (nil? (validate ::given-name {::given-name "a given name"})))
-  ;;
-  (is (= (validate ::given-name {::given-name nil})
-         [{:path     [:onespot.core-test/given-name]
-           :feedback {:code :missing
-                      :message "Value cannot be nil for a required entity."
-                      :entity-id :onespot.core-test/given-name
-                      :value nil}}]))
-  (is (= (validate ::given-name {})
-         [{:path [:onespot.core-test/given-name]
-           :feedback {:code      :missing
-                      :message   "Attr: `:onespot.core-test/given-name` cannot find itself in hashmap value."
-                      :entity-id :onespot.core-test/given-name
-                      :value     {}}}])))
+  (is (code? (validate :given-name nil)               :missing-value))
+  (is (code? (validate :given-name {})                :missing-value))
+  (is (code? (validate :given-name {:given-name nil}) :missing-value))
+  (is (nil?  (validate :given-name {:given-name "a given name"}))))
 
 (deftest test-recs-1
   (register-attrs!)
-  (rec! ::person
-        [::person-id ::given-name ::family-name]
-        ::osc/identity-ks [::person-id]
+  (rec! :person
+        [:person-id :given-name :nickname :family-name]
+
+        ::osc/identity-ids [:person-id]
+        ::osc/optional-ids [:nickname]
         ;;
         ::something-else :hi-there)
 
-  (rec! ::person-token
-        (osc/identity-keys ::person))
+  (is (= (osc/rec-attr-ids :person)
+         [:person-id :given-name :nickname :family-name]))
 
-  (validate ::person {::given-name ""})
-  (is (= (validate ::person {::given-name ""})
-         [{:path     [:onespot.core-test/person :onespot.core-test/person-id]
-           :feedback {:code :missing
-                      :message
-                      "Attr: `:onespot.core-test/person-id` cannot find itself in hashmap value."
-                      :entity-id :onespot.core-test/person-id
-                      :value #:onespot.core-test{:given-name ""}}}
-          {:path     [:onespot.core-test/person :onespot.core-test/given-name]
-           :feedback {:code :bad-value :message "Must be a non blank string."}}
-          {:path     [:onespot.core-test/person :onespot.core-test/family-name]
-           :feedback {:code :missing
-                      :message
-                      "Attr: `:onespot.core-test/family-name` cannot find itself in hashmap value."
-                      :entity-id :onespot.core-test/family-name
-                      :value #:onespot.core-test{:given-name ""}}}])))
+  (is (= (osc/rec-optional-set :person)
+         #{:nickname}))
+
+  (is (= (osc/rec-content :person {:person-id "my-id" :given-name "given" :family-name "family"
+                                   :other-stuff :that :gets :ignored})
+         {:person-id "my-id" :given-name "given", :family-name "family"}))
+
+  (is (= (osc/rec-identity :person {:person-id "my-id" :given-name "given" :family-name "family"})
+         {:person-id "my-id"}))
+
+  (is (= (osc/rec-values :person {:person-id "my-id" :given-name "given" :family-name "family"})
+         {:given-name "given" :family-name "family"}))
+
+  (is (code? (validate :person {:person-id   "my-id"
+                                :given-name  "g"
+                                :nickname    "n"
+                                :family-name "f"})
+             :bad-value))
+  (is (code? (validate :person {:person-id   10
+                                :given-name  nil
+                                :nickname    "n"
+                                :family-name "f"})
+             :missing-value))
+  (is (code? (validate :person {:given-name  nil
+                                :nickname    "n"
+                                :family-name "f"})
+             :missing-attr))
+  (is (nil? (validate :person {:person-id   10
+                               :given-name  "g"
+                               :nickname    "n"
+                               :family-name "f"}))))
+
+(deftest test-recs-nested-1
+  (register-attrs!)
+  (rec!  :contact-info-type [:contact-type :contact-value])
+  (attr! :contact-info :contact-info-type)
+
+  (rec! :person
+        [:person-id :given-name :family-name :contact-info]
+        ::osc/identity-ids [:person-id])
+
+  (is (code? (validate :person {:person-id 1234
+                                :given-name "gn"
+                                :family-name "fn"
+                                :contact-info {:contact-type :mobilecc
+                                               :contact-value "0123 123 123"}})
+             :bad-value))
+
+  (is (code? (validate :person {:person-id 1234
+                                :given-name "gn"
+                                :family-name "fn"
+                                :contact-info nil})
+             [:contact-info]
+             :missing-value))
+
+  (is (nil? (validate :person {:person-id 1234
+                               :given-name "gn"
+                               :family-name "fn"
+                               :contact-info {:contact-type :mobile
+                                              :contact-value "0123 123 123"}}))))
+
+(deftest test-recs-nested-2
+  (register-attrs!)
+  (rec!  :contact-info-type [:contact-type :contact-value])
+  (attr! :contact-info :contact-info-type)
+
+  (rec! :person
+        [:person-id :given-name :family-name :contact-info]
+        ::osc/identity-ids [:person-id]
+        ::osc/optional-ids [:contact-info]
+        ::osc/validator    (fn [{:keys [family-name]}]
+                             (when-not (= family-name "fn")
+                               {:code :bad-value
+                                :message "Family Name must be 'fn'"
+                                :value family-name})))
+
+  (is (code? (validate :person {:person-id 1234
+                                :given-name "gn"
+                                :family-name "fn"
+                                :contact-info {:contact-type :mobilecc
+                                               :contact-value "0123 123 123"}})
+             :bad-value))
+
+  (is (nil? (validate :person {:person-id 1234
+                               :given-name "gn"
+                               :family-name "fn"
+                               :contact-info {:contact-type :mobile
+                                              :contact-value "0123 123 123"}})))
+
+  (is (nil? (validate :person {:person-id 1234
+                               :given-name "gn"
+                               :family-name "fn"
+                               :contact-info nil})))
+
+  (is (code? (validate :person {:person-id 1234
+                                :given-name "gn"
+                                :family-name "FN-BAD"
+                                :contact-info nil})
+             :bad-value)))
