@@ -1,6 +1,5 @@
 (ns onespot.core
   (:require [clojure.pprint :refer [pprint]]
-            [clojure.spec.alpha :as s]
             [clojure.set :refer [subset? intersection union difference]]
             ;;
             [oberon.utils :refer [nil-when->]]
