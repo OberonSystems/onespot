@@ -138,7 +138,7 @@
 
 (defn throw-when-registered
   [kind entity-id]
-  (when (and *warn-on-register?* (exists? entity-id))
+  (when (and *warn-on-register?* (registered? entity-id))
     (throw (ex-info (format "Entity `%s` has already been registered." entity-id)
                     {:kind kind :entity-id entity-id}))))
 
