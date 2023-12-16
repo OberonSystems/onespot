@@ -23,6 +23,14 @@
                                :code      :missing-value
                                :message   "Value cannot be nil."}})))
 
+(defn empty-check
+  [{::osc/keys [entity-id] :as entity} value path]
+  (when (empty? value)
+    (add-feedback! {:path     path
+                    :feedback {:entity-id entity-id
+                               :code      :empty-value
+                               :message   "Value cannot be empty."}})))
+
 (defn attr-check
   [{::osc/keys [entity-id] :as entity} value path]
   (when-not (contains? value entity-id)
@@ -78,24 +86,37 @@
     ;; For records, first check all of the attributes, then call the
     ;; validator on the record itself when all of the attributes
     ;; passed.
-    ::osc/rec (or (->> (osc/rec-attrs entity)
+    ::osc/rec (or (nil-check   entity value path)
+                  (empty-check entity value path)
+                  (->> (osc/rec-attrs entity)
                        (map (fn [{attr-id ::osc/entity-id :as attr}]
-                              (let [attr-value (get value attr-id)]
+                              (let [attr-value (get value attr-id)
+                                    attr-path  (conj path attr-id)
+                                    required?  (osc/required? entity attr)]
                                 ;; The attr/entity-id must always be in the map
                                 (or (attr-check attr value path)
-                                    ;; Required attrs have the nil check here, this avoids
-                                    ;; recursion on nested maps and provides a single error
-                                    ;; for a missing map rather than a messeage for each
-                                    ;; attribute of the map.
-                                    (and (nil? attr-value)
-                                         (osc/required? entity attr)
-                                         (nil-check attr nil (conj path attr-id)))
+                                    ;; Required attrs have the
+                                    ;; presence checks here, this
+                                    ;; avoids recursion on nested maps
+                                    ;; and provides a single error for
+                                    ;; a missing map rather than a
+                                    ;; message for each attribute in
+                                    ;; the map.
+                                    (and required?
+                                         (nil? attr-value)
+                                         (nil-check attr nil attr-path))
+                                    (and required?
+                                         (coll?  attr-value)
+                                         (empty? attr-value)
+                                         (empty-check attr nil attr-path))
                                     ;;
                                     ;; Finally recurse to validate the
                                     ;; attribute if it has a value, if
                                     ;; not we can short cut the
-                                    ;; checking.
-                                    (when attr-value
+                                    ;; checking.  Do `not nil?` so that
+                                    ;; `false` values are passed
+                                    ;; through.
+                                    (when-not (nil? attr-value)
                                       (validate-entity attr value path))))))
                        (remove nil?)
                        seq)
@@ -104,18 +125,15 @@
     ;; Series share similiarities to attrs and recs but we just use
     ;; the referenced kind to validate and we add an index to the
     ;; path.
-    #_(
-       ::osc/series (let [child-entity (osc/pull series-kind)
-                          errors       (->> (get value id)
-                                            (map (fn [idx value]
-                                                   ;; this will add any errors to *feedback*
-                                                   (validate-entity child-entity value (conj this-path idx)))
-                                                 (range))
-                                            nil?
-                                            seq)
-                          error  (when-not errors
-                                   (validator-check entity value this-path))]
-                      (add-feedback! error)))))
+    ::osc/series (or (nil-check   entity value path)
+                     (empty-check entity value path)
+                     (let [series-type (osc/series-type entity)]
+                       (->> (map (fn [idx value]
+                                   (validate-entity series-type value (conj path idx)))
+                                 (range)
+                                 value)
+                            (remove nil?)
+                            seq)))))
 
 (defn validate
   [entish value]
