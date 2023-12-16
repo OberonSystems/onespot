@@ -179,9 +179,9 @@
   (when-not (or (scalar? type-id) (rec? type-id))
     (throw (ex-info (format "Series `%s` must refer to a scalar or a rec not: `%s`." entity-id type-id)
                     {:entity-id entity-id :type-id type-id})))
-  (push entity-id ::attr (assoc info
-                                ::entity-id entity-id
-                                ::type-id   type-id)))
+  (push entity-id ::series (assoc info
+                                  ::entity-id entity-id
+                                  ::type-id   type-id)))
 
 (defn series-type-id
   [entity-id]
