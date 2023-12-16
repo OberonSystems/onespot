@@ -25,7 +25,7 @@
            ::osc/description "My Description")
   (scalar! :record-id positive-integer?)
   ;;
-  (scalar! :contact-type-enum #(one-of? % #{:mobile :email})))
+  (scalar! :contact-type-enum #(one-of % #{:mobile :email})))
 
 (defn register-attrs!
   []
@@ -174,3 +174,64 @@
                                 :family-name "FN-BAD"
                                 :contact-info nil})
              :bad-value)))
+
+(deftest test-series-1
+  (register-attrs!)
+  (series! :some-strings :string1)
+
+  (is (code? (validate :some-strings nil)
+             :missing-value))
+
+  (is (code? (validate :some-strings [])
+             :empty-value))
+
+  (is (code? (validate :some-strings ["test" :this])
+             [1]
+             :bad-value))
+
+  (is (nil? (validate :some-strings ["asdf" "asdf"])))
+
+  (series! :tags :string1
+           ::osc/validator a-set)
+  (is (code? (validate :tags ["test" :this])
+             [1]
+             :bad-value))
+
+  (is (code? (validate :tags ["this" "that"])
+             :bad-type))
+
+  (is (nil? (validate :tags #{"this" "that"}))))
+
+(deftest test-series-2
+  (register-attrs!)
+  (rec!    :contact-info-type [:contact-type :contact-value])
+  (series! :contact-info-types :contact-info-type)
+  (attr!   :contact-infos :contact-info-types)
+
+  (rec!    :person [:given-name :contact-infos])
+
+  (is (code? (validate :person {:given-name "gn"
+                                :contact-infos []})
+             [:contact-infos]
+             :empty-value))
+
+  (is (nil? (validate :person {:given-name "gn"
+                               :contact-infos [{:contact-type  :email
+                                                :contact-value "some@theplace.com"}]})))
+
+  (is (code? (validate :person {:given-name "gn"
+                                :contact-infos [{:contact-type  :emailxx
+
+                                                 :contact-value "some@theplace.com"}]})
+             [:contact-infos 0 :contact-type]
+             :bad-value))
+
+  (is (code? (validate :person {:given-name "gn"
+                                :contact-infos []})
+             [:contact-infos]
+             :empty-value))
+
+  (is (code? (validate :person {:given-name "gn"
+                                :contact-infos [{}]})
+             [:contact-infos 0]
+             :empty-value)))
