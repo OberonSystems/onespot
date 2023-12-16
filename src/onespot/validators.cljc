@@ -41,6 +41,21 @@
     {:code    :bad-value
      :message "Must be a non blank, lower case string."}))
 
+(defn global-keyword
+  [x]
+  (or (when-not (keyword? x)
+        {:code    :bad-value
+         :message (format "`%s` must be a global keyword." x)})
+      (when (namespace x)
+        {:code    :bad-value
+         :message (format "`%s` must be a global keyword." x)})))
+
+(defn true-or-false
+  [x]
+  (when-not (boolean? x)
+    {:code    :bad-value
+     :message (format "`%s` must be true or false." x)}))
+
 #_
 (defn non-blank-svg-string?
   [x]
