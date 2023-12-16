@@ -1,6 +1,7 @@
 (ns onespot.utils
   (:require [clojure.string :as s]
-            [camel-snake-kebab.core :as csk]))
+            [camel-snake-kebab.core :as csk])
+  (:import [clojure.lang MapEntry]))
 
 ;;;
 
@@ -12,6 +13,10 @@
 
 (def ns-keyword->keyword
   (memoize #(-> % name keyword)))
+
+(defn map-entry
+  [k v]
+  (MapEntry/create k v))
 
 #_
 (defn hash-map*
