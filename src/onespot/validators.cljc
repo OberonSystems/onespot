@@ -21,19 +21,23 @@
 
 (defn non-blank-string?
   [x]
-  (when-not (and (string? x)
-                 (not (s/blank? x)))
+  (and (string? x)
+       (not (s/blank? x))))
+
+(defn non-blank-string
+  [x]
+  (when-not (non-blank-string? x)
     {:code    :bad-value
      :message "Must be a non blank string."}))
 
-(defn non-blank-upper-string?
+(defn non-blank-upper-string
   [x]
   (when-not (and (non-blank-string? x)
                  (= x (s/upper-case x)))
     {:code    :bad-value
      :message "Must be a non blank, upper case string."}))
 
-(defn non-blank-lower-string?
+(defn non-blank-lower-string
   [x]
   (when-not (and (non-blank-string? x)
                  (= x (s/lower-case x)))
