@@ -233,7 +233,7 @@
                                  ::attr-ids     attr-ids
                                  ::identity-ids identity-ids
                                  ::value-ids    value-ids
-                                 ::optional-set optional-set))))
+                                 ::optional-set (-> optional-set (nil-when-> empty?))))))
 
 ;;;
 
