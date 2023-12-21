@@ -8,13 +8,13 @@
 (defn register-common!
   []
   (clear!)
-  (scalar! :integer non-blank-string)
+  (scalar! :int     positive-integer ::osl/gql-type :int)
   (scalar! :string  non-blank-string)
   (scalar! :boolean true-or-false)
 
   ;; (scalar! :string2 global-keyword ::osj/kind :enum)
 
-  (attr! :person-id   :integer)
+  (attr! :person-id   :int)
   (attr! :given-name  :string)
   (attr! :family-name :string)
   (attr! :active?     :boolean
