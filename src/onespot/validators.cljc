@@ -77,7 +77,11 @@
 
 (defn positive-integer?
   [x]
-  (when-not (and (integer? x) (< 0 x))
+  (and (integer? x) (< 0 x)))
+
+(defn positive-integer
+  [x]
+  (when-not (positive-integer? x)
     {:code    :bad-value
      :message "Must be a positive integer."}))
 
