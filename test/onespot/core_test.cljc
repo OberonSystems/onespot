@@ -235,3 +235,11 @@
                                 :contact-infos [{}]})
              [:contact-infos 0]
              :empty-value)))
+
+(deftest test-walking-recs
+  ;; Need some tests here so that we can have a generic 'walker' that
+  ;; can visit all of the entities referenced by a single entity.
+  ;;
+  ;; That way we can then find all enums and recs that are referenced
+  ;; and then make sure they get rendered in the Lacinia schema.
+  )
