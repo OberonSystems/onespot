@@ -28,4 +28,6 @@
         ::osc/identity-ids [:person-id])
 
   (rec! :new-person
-        (osc/rec-value-ids :person)))
+        (osc/rec-value-ids :person))
+
+  (series! :people :person))
