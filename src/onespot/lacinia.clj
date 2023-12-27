@@ -218,7 +218,7 @@
       :else (throw (ex-info (format "Can't convert return-type `%s` to a field-ref." return-type)
                             {:return-type return-type})))))
 
-(defn end-point-types
+(defn return-types
   [schema]
   (->> (extract-map-entries schema (fn [[k v]]
                                      (and (map? v)
