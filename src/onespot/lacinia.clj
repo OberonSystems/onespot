@@ -90,14 +90,6 @@
         ;;
         optional?  (boolean optional?)]
     (cond
-      (native? entity-id)
-      {:entity     entity-id
-       :clj-arg-id arg-id
-       :gql-arg-id (->camelCaseKeyword arg-id)
-       :gql-type   (->gql-type entity-id :in many? optional?)
-       :many?      many?
-       :optional?  optional?}
-      ;;
       (osc/scalar? entity-id)
       (let [entity (osc/scalar entity-id)]
         {:entity    entity
@@ -153,7 +145,18 @@
                           ->camelCaseKeyword)
          :gql-type    (->gql-type (or (attr-type ::gql-type)
                                       (attr-type ::osc/entity-id))
-                                  :in many? optional?)}))))
+                                  :in many? optional?)})
+      ;;
+      (native? entity-id)
+      {:entity     entity-id
+       :clj-arg-id arg-id
+       :gql-arg-id (->camelCaseKeyword arg-id)
+       :gql-type   (->gql-type entity-id :in many? optional?)
+       :many?      many?
+       :optional?  optional?}
+      ;;
+      :else (throw (ex-info (format "Can't convert arg-id `%s` to a field-ref." arg-id)
+                            {:arg-id arg-id})))))
 
 (defn end-point-args
   [schema]
@@ -176,11 +179,6 @@
         many?     (or (vector?     return-type)
                       (osc/series? return-type))]
     (cond
-      (native? return-type)
-      {:entity   entity-id
-       :gql-type (->gql-type (+native-map+ entity-id) :out many? false)
-       :many?    many?}
-      ;;
       (osc/scalar? entity-id)
       (let [entity (osc/scalar entity-id)]
         {:entity   entity
@@ -200,15 +198,22 @@
       (osc/series? entity-id)
       (let [entity      (osc/series entity-id)
             series-type (osc/series-type entity)]
-        (if many?
-          ;; Then we are returning a list of lists
-          (throw (ex-info "Sorry, not yet handling returning a list of lists."
-                          {:return-type return-type}))
-          {:entity   entity
-           :gql-type (->gql-type (or (::gql-type      series-type)
-                                     (::osc/entity-id series-type))
-                                 :out true false)
-           :many?    true}))
+        ;; FIXME: How do we handle it if the they are returing `many`
+        ;; `serieses`?
+        (if (vector? return-type)
+          (throw (ex-info "Sorry, not yet handling returning a list of `series`."
+                          {:return-type return-type})))
+        ;;
+        {:entity   entity
+         :gql-type (->gql-type (or (::gql-type      series-type)
+                                   (::osc/entity-id series-type))
+                               :out true false)
+         :many?    true})
+      ;;
+      (native? entity-id)
+      {:entity   entity-id
+       :gql-type (->gql-type entity-id :out many? false)
+       :many?    many?}
       ;;
       :else (throw (ex-info (format "Can't convert return-type `%s` to a field-ref." return-type)
                             {:return-type return-type})))))
