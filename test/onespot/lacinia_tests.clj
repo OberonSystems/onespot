@@ -16,44 +16,27 @@
 (defn dummy-fn
   [])
 
-(deftest test-return-types
-  (register-common!)
-
-  ()
-
-  (let [schema {:queries   {:fetch-people  {:type    [:person]
-                                            :resolve fetch-people}
-                            :fetch-person  {:type    :person
-                                            :args    {:person-id nil}
-                                            :resolve fetch-person}}
-                :mutations {:add-person    {:type    :person
-                                            :args    {:new-person nil}
-                                            :resolve dummy-fn}
-                            :modify-person {:type    :person
-                                            :args    {:person nil}
-                                            :resolve dummy-fn}}}]
-    (is (= (->> (osl/end-point-types schema)
-                (map second)
-                (map (juxt :type-key :type-spec)))
-           [[[:person] '(not-null (list (not-null :person-out)))]
-            [:person   '(not-null :person-out)]]))
-
-    (is (= (osl/end-point-args schema)
-           [:new-person :person :person-id]))
-
-    ))
-
-(defn return-type=
-  [a b]
+(defn validator->comparable
+  [x path]
   ;; For some reason doing an `=` on the validator functions always
   ;; returns false, so doing the type to str conversion is the best
   ;; I've come up with for testing and is probably fine for our
   ;; purposes.
-  (let [validator->comparable (update-in x
-                                         [:entity :onespot.core/validator]
-                                         #(-> % type str))]
-    (= (validator->comparable a)
-       (validator->comparable b))))
+  (update-in x
+             path ;; [:entity :onespot.core/validator]
+             (comp str type)))
+
+(defn return-type=
+  [a b]
+  (= (validator->comparable a [:entity :onespot.core/validator])
+     (validator->comparable b [:entity :onespot.core/validator])))
+
+(defn arg-type=
+  [a b]
+  (= (validator->comparable a [:attr-type :onespot.core/validator])
+     (validator->comparable b [:attr-type :onespot.core/validator])))
+
+;;; --------------------------------------------------------------------------------
 
 (deftest test-return-types
   (register-common!)
@@ -91,18 +74,6 @@
                          :kind :onespot.core/series},
           :gql-type '(not-null (list (not-null :PersonOut))),
           :many? true})))
-
-(defn arg-type=
-  [a b]
-  ;; For some reason doing an `=` on the validator functions always
-  ;; returns false, so doing the type to str conversion is the best
-  ;; I've come up with for testing and is probably fine for our
-  ;; purposes.
-  (let [validator->comparable (update-in x
-                                         [:attr-type :onespot.core/validator]
-                                         #(-> % type str))]
-    (= (validator->comparable a)
-       (validator->comparable b))))
 
 (deftest test-arg-types
   (register-common!)
