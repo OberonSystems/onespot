@@ -34,13 +34,20 @@
   [k]
   (contains? +native-map+ k))
 
+(defn clj-name->gql-type-name
+  [clj-name in-out]
+  {:pre [(#{:in :out} in-out)]}
+  (->PascalCaseKeyword (str (name clj-name) "-" (name in-out))))
+
+(defn clj-name->gql-name
+  [clj-name]
+  (->camelCaseKeyword clj-name))
+
 (defn ->gql-type
   [field-type in-out many? optional?]
-  {:pre [(#{:in :out} in-out)]}
+
   (let [gql-type (or (+native-map+ field-type)
-                     (->PascalCaseKeyword (if in-out
-                                            (str (name field-type) "-" (name in-out))
-                                            field-type)))]
+                     (clj-name->gql-type-name field-type in-out))]
     (cond
       many? (let [term (list 'list
                              (list 'not-null gql-type))]
@@ -251,3 +258,44 @@
   ;;    :args
   ;;    :resolve resolve})
   )
+
+;;; --------------------------------------------------------------------------------
+
+(defn entity->field-ref
+  [entity-id in-out optional?]
+  (cond
+    (osc/scalar? entity-id)
+    (let [entity (osc/scalar entity-id)]
+      {:type (->gql-type (or (::gql-type      entity)
+                             (::osc/entity-id entity))
+                         in-out false optional?)})
+    ;;
+    (osc/rec? entity-id)
+    (let [entity (osc/rec entity-id)]
+      {:type (->gql-type (or (::gql-type entity)
+                             (::osc/entity-id entity))
+                         in-out false optional?)})
+    ;;
+    (osc/series? entity-id)
+    (let [entity      (osc/series entity-id)
+          series-type (osc/series-type entity)]
+      {:type (->gql-type (or (::gql-type      series-type)
+                             (::osc/entity-id series-type))
+                         in-out true optional?)})
+    ;;
+    :else (throw (ex-info (format "Can't convert entity `%s` to a field-ref." entity-id)
+                          {:entity-id entity-id}))))
+
+(defn rec->object
+  [{::osc/keys [entity-id] :as rec}
+   in-out]
+  [(clj-name->gql-type-name entity-id in-out)
+   {:fields   (->> (osc/rec-attrs rec)
+                   (map (fn [attr]
+                          (let [attr-type (osc/attr-type attr)]
+                            [(clj-name->gql-name (or (::gql-id        attr)
+                                                     (::osc/entity-id attr)))
+                             (entity->field-ref attr-type
+                                                in-out
+                                                (osc/optional? rec attr))])))
+                   (into {}))}])

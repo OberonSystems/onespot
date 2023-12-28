@@ -103,3 +103,29 @@
                   :gql-type '(not-null :PersonIn),
                   :many? false,
                   :optional? false})))
+
+(deftest test-entity->field-ref
+  (is (= (osl/entity->field-ref :string :in false)
+         {:type '(not-null String)}))
+
+  (is (= (osl/entity->field-ref :string :in true)
+         {:type 'String}))
+
+  (is (= (osl/entity->field-ref :person :in false)
+         {:type '(not-null :PersonIn)}))
+
+  (is (= (osl/entity->field-ref :people :in false)
+         {:type '(not-null (list (not-null :PersonIn)))}))
+
+  (is (= (osl/entity->field-ref :people :out true)
+         {:type '(list (not-null :PersonOut))})))
+
+(deftest test-rec->gql-object
+
+  (is (= (osl/rec->object (osc/pull :person) :in)
+         '[:PersonIn
+           {:fields
+            {:personId   {:type (not-null Int)},
+             :givenName  {:type (not-null String)},
+             :familyName {:type (not-null String)},
+             :isActive   {:type (not-null Boolean)}}}])))
