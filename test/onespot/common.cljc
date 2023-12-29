@@ -5,18 +5,32 @@
             [onespot.lacinia :as osl]
             :reload))
 
+(def +shirt-sizes+ #{:sm :md :lg :xl})
+
+(defn validate-shirt-size
+  [x]
+  (when-not (+shirt-sizes+ x)
+    {:code    :bad-value
+     :message "Must be a shirt size."
+     :value   x}))
+
 (defn register-common!
   []
   (clear!)
-  (scalar! :int     positive-integer ::osl/gql-type :int)
-  (scalar! :string  non-blank-string)
-  (scalar! :boolean true-or-false)
+  (scalar! :positive-integer positive-integer ::osl/gql-type :int)
+  (scalar! :string           non-blank-string)
+  (scalar! :boolean          true-or-false)
+  (scalar! :shirt-size-type  validate-shirt-size
+           ;;
+           :osl/gql-type  :enum
+           :osl/gql-enums +shirt-sizes+
+           ;;
+           :pg/pg-type :enum)
 
-  ;; (scalar! :string2 global-keyword ::osj/kind :enum)
-
-  (attr! :person-id   :int)
+  (attr! :person-id   :positive-integer)
   (attr! :given-name  :string)
   (attr! :family-name :string)
+  (attr! :shirt-size  :shirt-size-type)
   (attr! :active?     :boolean
          ::osl/gql-id :is-active)
 
@@ -24,6 +38,7 @@
         [:person-id
          :given-name
          :family-name
+         :shirt-size
          :active?]
         ::osc/identity-ids [:person-id])
 
