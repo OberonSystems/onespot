@@ -99,7 +99,7 @@
     (cond
       (osc/scalar? entity-id)
       (let [entity (osc/scalar entity-id)]
-        {:entity    entity
+        {:entity-id  entity-id
          :clj-arg-id arg-id
          :gql-arg-id (->camelCaseKeyword arg-id)
          :gql-type   (->gql-type (or (entity ::gql-type)
@@ -110,7 +110,7 @@
       ;;
       (osc/rec? entity-id)
       (let [entity (osc/rec entity-id)]
-        {:entity     entity
+        {:entity-id  entity-id
          :clj-arg-id arg-id
          :gql-arg-id (-> (or (when info-type? arg-id)
                              (entity ::gql-arg-id)
@@ -125,8 +125,8 @@
       (osc/series? entity-id)
       (let [entity      (osc/series entity-id)
             series-type (osc/series-type entity)]
-        {:entity      entity
-         :series-type series-type
+        {:entity-id      entity-id
+         :series-type-id (::osc/entity-id series-type)
          ;;
          :clj-arg-id  arg-id
          :gql-arg-id  (-> (or (when info-type? arg-id)
@@ -142,8 +142,8 @@
       (osc/attr? entity-id)
       (let [entity    (osc/attr      entity-id)
             attr-type (osc/attr-type entity)]
-        {:entity    entity
-         :attr-type attr-type
+        {:entity-id    entity-id
+         :attr-type-id (::osc/entity-id attr-type)
          ;;
          :clj-arg-id  arg-id
          :gql-arg-id  (-> (or (when info-type? arg-id)
@@ -155,7 +155,7 @@
                                   :in many? optional?)})
       ;;
       (native? entity-id)
-      {:entity     entity-id
+      {:entity-id  entity-id
        :clj-arg-id arg-id
        :gql-arg-id (->camelCaseKeyword arg-id)
        :gql-type   (->gql-type entity-id :in many? optional?)
@@ -188,18 +188,18 @@
     (cond
       (osc/scalar? entity-id)
       (let [entity (osc/scalar entity-id)]
-        {:entity   entity
-         :gql-type (->gql-type (or (::gql-type entity)
-                                   entity-id)
-                               :out many? false)
-         :many?    many?})
+        {:entity-id entity-id
+         :gql-type  (->gql-type (or (::gql-type entity)
+                                    entity-id)
+                                :out many? false)
+         :many?     many?})
       ;;
       (osc/rec? entity-id)
       (let [entity (osc/rec entity-id)]
-        {:entity   entity
-         :gql-type (->gql-type (or (::gql-type entity)
-                                   entity-id)
-                               :out many? false)
+        {:entity-id entity-id
+         :gql-type  (->gql-type (or (::gql-type entity)
+                                    entity-id)
+                                :out many? false)
          :many?    many?})
       ;;
       (osc/series? entity-id)
@@ -211,16 +211,16 @@
           (throw (ex-info "Sorry, not yet handling returning a list of `series`."
                           {:return-type return-type})))
         ;;
-        {:entity   entity
-         :gql-type (->gql-type (or (::gql-type      series-type)
-                                   (::osc/entity-id series-type))
-                               :out true false)
-         :many?    true})
+        {:entity-id entity-id
+         :gql-type  (->gql-type (or (::gql-type      series-type)
+                                    (::osc/entity-id series-type))
+                                :out true false)
+         :many?     true})
       ;;
       (native? entity-id)
-      {:entity   entity-id
-       :gql-type (->gql-type entity-id :out many? false)
-       :many?    many?}
+      {:entity-id entity-id
+       :gql-type  (->gql-type entity-id :out many? false)
+       :many?     many?}
       ;;
       :else (throw (ex-info (format "Can't convert return-type `%s` to a field-ref." return-type)
                             {:return-type return-type})))))
