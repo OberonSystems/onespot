@@ -153,42 +153,42 @@
 ;;;
 
 (defn attr!
-  [entity-id type-id & {:as info}]
+  [entity-id attr-entity-id & {:as info}]
   (throw-when-registered ::attr entity-id)
-  (when-not (or (scalar? type-id) (rec? type-id) (series? type-id))
-    (throw (ex-info (format "Attr `%s` must be associated with a scalar, rec or series not: `%s`." entity-id type-id)
-                    {:entity-id entity-id :type-id type-id})))
+  (when-not (or (scalar? attr-entity-id) (rec? attr-entity-id) (series? attr-entity-id))
+    (throw (ex-info (format "Attr `%s` must be associated with a scalar, rec or series not: `%s`." entity-id attr-entity-id)
+                    {:entity-id entity-id :attr-entity-id attr-entity-id})))
   (push entity-id ::attr (assoc info
-                                ::entity-id entity-id
-                                ::type-id   type-id)))
+                                ::entity-id      entity-id
+                                ::attr-entity-id attr-entity-id)))
 
-(defn attr-type-id
+(defn attr-entity-id
   [entity-id]
-  (-> (attr entity-id) ::type-id))
+  (-> (attr entity-id) ::attr-entity-id))
 
-(defn attr-type
+(defn attr-entity
   [entity-id]
-  (-> entity-id attr-type-id pull))
+  (-> entity-id attr-entity-id pull))
 
 ;;;
 
 (defn series!
-  [entity-id type-id & {:as info}]
+  [entity-id series-entity-id & {:as info}]
   (throw-when-registered ::series entity-id)
-  (when-not (or (scalar? type-id) (rec? type-id))
-    (throw (ex-info (format "Series `%s` must refer to a scalar or a rec not: `%s`." entity-id type-id)
-                    {:entity-id entity-id :type-id type-id})))
+  (when-not (or (scalar? series-entity-id) (rec? series-entity-id))
+    (throw (ex-info (format "Series `%s` must refer to a scalar or a rec not: `%s`." entity-id series-entity-id)
+                    {:entity-id entity-id :series-entity-id series-entity-id})))
   (push entity-id ::series (assoc info
-                                  ::entity-id entity-id
-                                  ::type-id   type-id)))
+                                  ::entity-id       entity-id
+                                  :series-entity-id series-entity-id)))
 
-(defn series-type-id
+(defn series-entity-id
   [entity-id]
-  (-> entity-id series ::type-id))
+  (-> entity-id series ::series-entity-id))
 
-(defn series-type
+(defn series-entity
   [entity-id]
-  (-> entity-id series-type-id pull))
+  (-> entity-id series-entity-id pull))
 
 ;;;
 

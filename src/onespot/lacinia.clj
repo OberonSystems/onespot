@@ -92,7 +92,7 @@
                        (and (osc/attr? entity-id)
                             (-> entity-id
                                 osc/attr
-                                osc/attr-type
+                                osc/attr-entity
                                 osc/series?)))
         ;;
         optional?  (boolean optional?)]
@@ -123,35 +123,35 @@
          :optional?  optional?})
       ;;
       (osc/series? entity-id)
-      (let [entity      (osc/series entity-id)
-            series-type (osc/series-type entity)]
-        {:entity-id      entity-id
-         :series-type-id (::osc/entity-id series-type)
+      (let [entity        (osc/series entity-id)
+            series-entity (osc/series-entity entity)]
+        {:entity-id        entity-id
+         :series-entity-id (::osc/entity-id series-entity)
          ;;
          :clj-arg-id  arg-id
          :gql-arg-id  (-> (or (when info-type? arg-id)
                               (entity ::gql-arg-id)
                               arg-id)
                           ->camelCaseKeyword)
-         :gql-type    (->gql-type (or (series-type ::gql-type)
-                                      (series-type ::osc/entity-id))
+         :gql-type    (->gql-type (or (series-entity ::gql-type)
+                                      (series-entity ::osc/entity-id))
                                   :in many? optional?)
          :many?     many?
          :optional? optional?})
       ;;
       (osc/attr? entity-id)
-      (let [entity    (osc/attr      entity-id)
-            attr-type (osc/attr-type entity)]
-        {:entity-id    entity-id
-         :attr-type-id (::osc/entity-id attr-type)
+      (let [entity      (osc/attr      entity-id)
+            attr-entity (osc/attr-entity entity)]
+        {:entity-id      entity-id
+         :attr-entity-id (::osc/attr-entity-id attr-entity)
          ;;
          :clj-arg-id  arg-id
          :gql-arg-id  (-> (or (when info-type? arg-id)
                               (entity ::gql-arg-id)
                               arg-id)
                           ->camelCaseKeyword)
-         :gql-type    (->gql-type (or (attr-type ::gql-type)
-                                      (attr-type ::osc/entity-id))
+         :gql-type    (->gql-type (or (attr-entity ::gql-type)
+                                      (attr-entity ::osc/entity-id))
                                   :in many? optional?)})
       ;;
       (native? entity-id)
@@ -203,8 +203,8 @@
          :many?    many?})
       ;;
       (osc/series? entity-id)
-      (let [entity      (osc/series entity-id)
-            series-type (osc/series-type entity)]
+      (let [entity        (osc/series entity-id)
+            series-entity (osc/series-entity entity)]
         ;; FIXME: How do we handle it if the they are returing `many`
         ;; `serieses`?
         (if (vector? return-type)
@@ -212,8 +212,8 @@
                           {:return-type return-type})))
         ;;
         {:entity-id entity-id
-         :gql-type  (->gql-type (or (::gql-type      series-type)
-                                    (::osc/entity-id series-type))
+         :gql-type  (->gql-type (or (::gql-type      series-entity)
+                                    (::osc/entity-id series-entity))
                                 :out true false)
          :many?     true})
       ;;
@@ -249,15 +249,7 @@
               (map (fn [[k _]]
                      (let [{:keys [arg-name arg-spec] :as arg-type} (get end-point-arg-map [end-point-name k])]
                        [arg-name arg-spec])))
-              (into {}))}
-
-  ;; (let [return-type (gql-type type)]
-  ;;   {:type    (if (manyable? type)
-  ;;               (list 'list (list 'not-null return-type))
-  ;;               return-type)
-  ;;    :args
-  ;;    :resolve resolve})
-  )
+              (into {}))})
 
 ;;; --------------------------------------------------------------------------------
 
@@ -277,10 +269,10 @@
                          in-out false optional?)})
     ;;
     (osc/series? entity-id)
-    (let [entity      (osc/series entity-id)
-          series-type (osc/series-type entity)]
-      {:type (->gql-type (or (::gql-type      series-type)
-                             (::osc/entity-id series-type))
+    (let [entity        (osc/series entity-id)
+          series-entity (osc/series-entity entity)]
+      {:type (->gql-type (or (::gql-type      series-entity)
+                             (::osc/entity-id series-entity))
                          in-out true optional?)})
     ;;
     :else (throw (ex-info (format "Can't convert entity `%s` to a field-ref." entity-id)
@@ -292,10 +284,10 @@
   [(clj-name->gql-type-name entity-id in-out)
    {:fields   (->> (osc/rec-attrs rec)
                    (map (fn [attr]
-                          (let [attr-type (osc/attr-type attr)]
+                          (let [attr-entity (osc/attr-entity attr)]
                             [(clj-name->gql-name (or (::gql-id        attr)
                                                      (::osc/entity-id attr)))
-                             (entity->field-ref attr-type
+                             (entity->field-ref attr-entity
                                                 in-out
                                                 (osc/optional? rec attr))])))
                    (into {}))}])

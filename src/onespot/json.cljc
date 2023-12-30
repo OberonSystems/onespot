@@ -25,7 +25,7 @@
 (defmethod entity->json [::osc/attr ::default]
   [{::osc/keys [entity-id] :as entity} value]
   (map-entry (-> (or (entity ::entity-id) entity-id))
-             (entity->json (osc/attr-type entity)
+             (entity->json (osc/attr-entity entity)
                            (get value entity-id))))
 
 (defmethod entity->json [::osc/rec ::default]
@@ -36,8 +36,8 @@
 
 (defmethod entity->json [::osc/series ::default]
   [entity value]
-  (let [series-type (osc/series-type entity)]
-    (mapv #(entity->json series-type %)
+  (let [series-entity (osc/series-entity entity)]
+    (mapv #(entity->json series-entity %)
           value)))
 
 ;;; --------------------------------------------------------------------------------

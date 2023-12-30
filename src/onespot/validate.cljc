@@ -78,7 +78,7 @@
     ;; We also validate the content based on either an attr specific
     ;; validator or on the one that is provided with their attr-kind-id
     ;; kind (a scalar or an entity).
-    ::osc/attr   (let [attr-entity (osc/attr-type entity)
+    ::osc/attr   (let [attr-entity (osc/attr-entity entity)
                        value       (get value entity-id)
                        path        (conj path entity-id)]
                    (validate-entity attr-entity value path))
@@ -127,9 +127,9 @@
     ;; path.
     ::osc/series (or (nil-check   entity value path)
                      (empty-check entity value path)
-                     (let [series-type (osc/series-type entity)]
+                     (let [series-entity (osc/series-entity entity)]
                        (->> (map (fn [idx value]
-                                   (validate-entity series-type value (conj path idx)))
+                                   (validate-entity series-entity value (conj path idx)))
                                  (range)
                                  value)
                             (remove nil?)
