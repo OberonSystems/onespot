@@ -44,19 +44,19 @@
 (deftest test-arg-types
   (register-common!)
   (is (= (osl/arg->field-ref :person-id nil)
-         {:entity-id    :person-id
-          :attr-type-id :positive-integer
-          :clj-arg-id   :person-id
-          :gql-arg-id   :personId
-          :gql-type     '(not-null Int)}))
+         {:entity-id      :person-id
+          :attr-entity-id :positive-integer
+          :clj-arg-id     :person-id
+          :gql-arg-id     :personId
+          :gql-type       '(not-null Int)}))
 
   (is (= (osl/arg->field-ref :person nil)
          {:entity-id  :person
           :clj-arg-id :person
           :gql-arg-id :person
-          :gql-type '(not-null :PersonIn)
-          :many? false
-          :optional? false})))
+          :gql-type   '(not-null :PersonIn)
+          :many?      false
+          :optional?  false})))
 
 (deftest test-entity->field-ref
   (register-common!)
