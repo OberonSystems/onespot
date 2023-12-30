@@ -59,6 +59,7 @@
           :optional? false})))
 
 (deftest test-entity->field-ref
+  (register-common!)
   (is (= (osl/entity->field-ref :string :in false)
          {:type '(not-null String)}))
 
@@ -75,6 +76,7 @@
          {:type '(list (not-null :PersonOut))})))
 
 (deftest test-rec->gql-object
+  (register-common!)
   (is (= (osl/rec->object (osc/pull :person) :in)
          '[:PersonIn
            {:fields
