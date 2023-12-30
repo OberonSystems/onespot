@@ -5,13 +5,20 @@
             [onespot.lacinia :as osl]
             :reload))
 
-(def +shirt-sizes+ #{:sm :md :lg :xl})
+(def +shirt-size-enums+
+  [{:value :sm :description "Small"}
+   {:value :md :description "Medium"}
+   {:value :lg :description "Large"}
+   {:value :xl :description "Extra Large"}])
+
+(def +shirt-sizes+
+  (->> +shirt-size-enums+ (map :value) set))
 
 (defn validate-shirt-size
   [x]
   (when-not (+shirt-sizes+ x)
     {:code    :bad-value
-     :message "Must be a shirt size."
+     :message (format "Shirt Size must be one of `%s` not `%s`." +shirt-sizes+ x)
      :value   x}))
 
 (defn register-common!
@@ -22,10 +29,10 @@
   (scalar! :boolean          true-or-false)
   (scalar! :shirt-size-type  validate-shirt-size
            ;;
-           :osl/gql-type  :enum
-           :osl/gql-enums +shirt-sizes+
+           ::osc/enums +shirt-size-enums+
            ;;
-           :pg/pg-type :enum)
+           ::osl/gql-type :enum
+           :pg/pg-type   :enum)
 
   (attr! :person-id   :positive-integer)
   (attr! :given-name  :string)
