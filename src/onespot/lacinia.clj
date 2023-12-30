@@ -36,8 +36,10 @@
 
 (defn clj-name->gql-type-name
   [clj-name in-out]
-  {:pre [(#{:in :out} in-out)]}
-  (->PascalCaseKeyword (str (name clj-name) "-" (name in-out))))
+  {:pre [(#(contains? #{:in :out nil} in-out))]}
+  (if in-out
+    (->PascalCaseKeyword (str (name clj-name) "-" (name in-out)))
+    (->PascalCaseKeyword clj-name)))
 
 (defn clj-name->gql-name
   [clj-name]
@@ -260,7 +262,7 @@
     (let [entity (osc/scalar entity-id)]
       {:type (->gql-type (or (::gql-type      entity)
                              (::osc/entity-id entity))
-                         in-out false optional?)})
+                         nil false optional?)})
     ;;
     (osc/rec? entity-id)
     (let [entity (osc/rec entity-id)]
@@ -291,3 +293,31 @@
                                                 in-out
                                                 (osc/optional? rec attr))])))
                    (into {}))}])
+
+;;; --------------------------------------------------------------------------------
+
+(defn scalar->enum
+  [{::osc/keys [entity-id enums]
+    ::keys [gql-id description] :as entity}]
+  [(clj-name->gql-name (or gql-id entity-id))
+   (merge {:values (->> enums
+                        (map (fn [enum]
+                               (cond
+                                 (keyword? enum)
+                                 (csk/->SCREAMING_SNAKE_CASE_KEYWORD enum)
+                                 ;;
+                                 (map? enum)
+                                 (let [{:keys [value description]} enum]
+                                   (cond
+                                     (and value description)
+                                     {:enum-value  (csk/->SCREAMING_SNAKE_CASE_KEYWORD value)
+                                      :description description}
+                                     ;;
+                                     value
+                                     (csk/->SCREAMING_SNAKE_CASE_KEYWORD value)
+                                     ;;
+                                     :else
+                                     (throw (ex-info "An enum must have a value."
+                                                     {:entity entity}))))))))}
+          (when description
+            {:description description}))])
