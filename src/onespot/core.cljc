@@ -34,6 +34,13 @@
   [entity-id]
   (kind? entity-id ::scalar))
 
+(defn enum?
+  [entity-id]
+  (and (kind? entity-id ::scalar)
+       (-> @+registry+
+           (get entity-id)
+           (contains? ::enums))))
+
 (defn rec?
   [entity-id]
   (kind? entity-id ::rec))
