@@ -133,7 +133,8 @@
                                  (range)
                                  value)
                             (remove nil?)
-                            seq)))))
+                            seq))
+                     (validator-check entity value path))))
 
 (defn validate
   [entish value]
