@@ -83,4 +83,5 @@
             {:personId   {:type (not-null Int)}
              :givenName  {:type (not-null String)}
              :familyName {:type (not-null String)}
+             :shirtSize  {:type (not-null :ShirtSizeType)}
              :isActive   {:type (not-null Boolean)}}}])))
