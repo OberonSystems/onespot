@@ -29,10 +29,7 @@
   (scalar! :boolean          true-or-false)
   (scalar! :shirt-size-type  validate-shirt-size
            ;;
-           ::osc/enums +shirt-size-enums+
-           ;;
-           ::osl/gql-type :enum
-           :pg/pg-type   :enum)
+           ::osc/enums +shirt-size-enums+)
 
   (attr! :person-id   :positive-integer)
   (attr! :given-name  :string)
