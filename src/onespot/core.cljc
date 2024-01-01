@@ -179,8 +179,8 @@
     (throw (ex-info (format "Series `%s` must refer to a scalar or a rec not: `%s`." entity-id series-entity-id)
                     {:entity-id entity-id :series-entity-id series-entity-id})))
   (push entity-id ::series (assoc info
-                                  ::entity-id       entity-id
-                                  :series-entity-id series-entity-id)))
+                                  ::entity-id        entity-id
+                                  ::series-entity-id series-entity-id)))
 
 (defn series-entity-id
   [entity-id]
