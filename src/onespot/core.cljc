@@ -302,3 +302,37 @@
   [entity-id m]
   (-> (select-keys m (rec-value-ids entity-id))
       (nil-when-> empty?)))
+
+;;; --------------------------------------------------------------------------------
+
+(defn walk-entities
+  "Walks the entities and visits all referenced entities, returning a
+  distinct set.
+
+  Avoids recursion by tracking previously visited entity-ids."
+  [entity-id-queue]
+  (loop [queue   (if (keyword? entity-id-queue)
+                   [entity-id-queue]
+                   entity-id-queue)
+         visited #{}]
+    (let [[entity-id & queue] queue]
+      (cond
+        (nil? entity-id) visited
+        ;;
+        (contains? visited entity-id)
+        (recur queue visited)
+        ;;
+        (scalar? entity-id)
+        (recur queue (conj visited entity-id))
+        ;;
+        (rec? entity-id)
+        (recur (into queue (rec-attr-ids entity-id))
+               (conj visited entity-id))
+        ;;
+        (series? entity-id)
+        (recur (conj queue (series-entity-id entity-id))
+               (conj visited entity-id))
+        ;;
+        (attr? entity-id)
+        (recur (conj queue (attr-entity-id entity-id))
+               (conj visited entity-id))))))

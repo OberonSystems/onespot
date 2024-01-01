@@ -3,6 +3,8 @@
   (:require [onespot.core :refer :all :as osc]
             [onespot.validators :refer :all]
             [onespot.validate :refer [validate]]
+            ;;
+            [onespot.common :refer :all]
             :reload))
 
 (defn code?
@@ -16,33 +18,12 @@
           :code)
       code)))
 
-(defn register-scalars!
-  []
-  (clear!)
-  (scalar! :string1 non-blank-string?)
-  (scalar! :string2 non-blank-string?
-           ::osc/label       "My Label"
-           ::osc/description "My Description")
-  (scalar! :record-id positive-integer?)
-  ;;
-  (scalar! :contact-type-enum #(one-of % #{:mobile :email})))
-
-(defn register-attrs!
-  []
-  (register-scalars!)
-  (attr! :person-id   :record-id)
-  (attr! :given-name  :string1)
-  (attr! :nickname    :string1)
-  (attr! :family-name :string1
-         ::osc/label "The Family Name")
-  ;;
-  (attr! :contact-type  :contact-type-enum)
-  (attr! :contact-value :string1))
+;;; --------------------------------------------------------------------------------
 
 (deftest test-scalars-1
   (register-scalars!)
   (is (= (label     :string1) "String 1"))
-  (is (= (validator :string1) non-blank-string?))
+  (is (= (validator :string1) non-blank-string))
 
   (is (= (label       :string2) "My Label"))
   (is (= (description :string2) "My Description"))
@@ -78,14 +59,14 @@
   (is (= (osc/rec-optional-set :person)
          #{:nickname}))
 
-  (is (= (osc/rec-content :person {:person-id "my-id" :given-name "given" :family-name "family"
+  (is (= (osc/rec-content :person {:person-id 123 :given-name "given" :family-name "family"
                                    :other-stuff :that :gets :ignored})
-         {:person-id "my-id" :given-name "given", :family-name "family"}))
+         {:person-id 123 :given-name "given", :family-name "family"}))
 
-  (is (= (osc/rec-identity :person {:person-id "my-id" :given-name "given" :family-name "family"})
-         {:person-id "my-id"}))
+  (is (= (osc/rec-identity :person {:person-id 123 :given-name "given" :family-name "family"})
+         {:person-id 123}))
 
-  (is (= (osc/rec-values :person {:person-id "my-id" :given-name "given" :family-name "family"})
+  (is (= (osc/rec-values :person {:person-id 123 :given-name "given" :family-name "family"})
          {:given-name "given" :family-name "family"}))
 
   (is (code? (validate :person {:person-id   "my-id"
@@ -176,8 +157,7 @@
              :bad-value)))
 
 (deftest test-series-1
-  (register-attrs!)
-  (series! :some-strings :string1)
+  (register-common!)
 
   (is (code? (validate :some-strings nil)
              :missing-value))
@@ -191,12 +171,12 @@
 
   (is (nil? (validate :some-strings ["asdf" "asdf"])))
 
-  (series! :tags :string1
-           ::osc/validator a-set)
+  ;; Should fail as `:this` should be a string.
   (is (code? (validate :tags ["test" :this])
              [1]
              :bad-value))
 
+  ;; Should fail as it isn't a set.
   (is (code? (validate :tags ["this" "that"])
              :bad-type))
 
@@ -221,7 +201,6 @@
 
   (is (code? (validate :person {:given-name "gn"
                                 :contact-infos [{:contact-type  :emailxx
-
                                                  :contact-value "some@theplace.com"}]})
              [:contact-infos 0 :contact-type]
              :bad-value))
@@ -237,9 +216,15 @@
              :empty-value)))
 
 (deftest test-walking-recs
-  ;; Need some tests here so that we can have a generic 'walker' that
-  ;; can visit all of the entities referenced by a single entity.
-  ;;
-  ;; That way we can then find all enums and recs that are referenced
-  ;; and then make sure they get rendered in the Lacinia schema.
-  )
+  (register-common!)
+  (is (= (walk-entities :given-name)
+         #{:given-name :string}))
+
+  (is (= (walk-entities :person)
+         #{:active? :positive-integer :person :person-id :given-name :string
+           :shirt-size-type :shirt-size :family-name :boolean}))
+
+  ;; Should be the same as :person is contained in :people so it's a
+  ;; referenced type and should be included either way.
+  (is (= (walk-entities :people)
+         (walk-entities [:person :people]))))
