@@ -142,10 +142,10 @@
          :optional? optional?})
       ;;
       (osc/attr? entity-id)
-      (let [entity      (osc/attr      entity-id)
+      (let [entity      (osc/attr        entity-id)
             attr-entity (osc/attr-entity entity)]
         {:entity-id      entity-id
-         :attr-entity-id (::osc/attr-entity-id attr-entity)
+         :attr-entity-id (::osc/attr-entity-id entity)
          ;;
          :clj-arg-id  arg-id
          :gql-arg-id  (-> (or (when info-type? arg-id)
