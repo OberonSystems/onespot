@@ -66,6 +66,8 @@
   "What do we support here?
 
   {:person-id  nil}
+  {:record     :some-entity-id}
+  {:record     [:some-entity-id]}
   {:person-id  {:type :string}}
   {:person-id  {:type :string :optional? true}}
   {:people-ids {:type [:string] :optional? true}}
@@ -79,25 +81,38 @@
   If info is a map then we base it on the :type field in the map.
   "
   [arg-id {:keys [optional?] :as info}]
-  (let [ ;; make-error (fn []
-        ;;              (ex-info (format "Can't convert arg `%s` to a field-ref." arg-id)
-        ;;                       {:arg-id arg-id :info info}))
+  (let [info-type? (and (map? info) (contains? info :type)) ; Did the type information come from the info?
+        optional?  (boolean optional?)
         ;;
-        entity-id  (or (and (-> info :type vector?) (-> info :type first))
-                       (:type info)
-                       arg-id)
-        ;; Did the type information come from the info?
-        info-type? (contains? info :type)
+        info (cond
+               (nil? info)     {:type arg-id}
+               ;;
+               (keyword? info) {:type info}
+               ;;
+               (vector? info)  {:type (first info) :many? true}
+               ;;
+               (and (map? info)
+                    (contains? info :type)
+                    (-> info :type vector?)
+                    (-> info :type first keyword?))
+               {:type (-> info :type first) :many? true}
+               ;;
+               (and (map? info)
+                    (contains? info :type)
+                    (-> info :type keyword?))
+               {:type (-> info :type)}
+               ;;
+               :else (ex-info (format "Can't convert arg `%s` to a field-ref." arg-id)
+                              {:arg-id arg-id :info info}))
         ;;
-        many?      (or (-> info :type vector?)
-                       (osc/series? entity-id)
-                       (and (osc/attr? entity-id)
-                            (-> entity-id
-                                osc/attr
-                                osc/attr-entity
-                                osc/series?)))
-        ;;
-        optional?  (boolean optional?)]
+        entity-id (:type info)
+        many?     (or (-> info :many?)
+                      (osc/series? entity-id)
+                      (and (osc/attr? entity-id)
+                           (-> entity-id
+                               osc/attr
+                               osc/attr-entity
+                               osc/series?)))]
     (cond
       (osc/scalar? entity-id)
       (let [entity (osc/scalar entity-id)]
@@ -173,9 +188,10 @@
                                      (and (map? v)
                                           (contains? v :args))))
        (map (fn [[k v]]
-              [k (->> v :args
-                      (map (fn [[arg-id info]]
-                             (arg->field-ref arg-id info))))]))
+              [k (->> v
+                      :args
+                      (mapv (fn [[arg-id info]]
+                              (arg->field-ref arg-id info))))]))
        (into {})))
 
 ;;; --------------------------------------------------------------------------------
@@ -299,7 +315,7 @@
 (defn scalar->enum
   [{::osc/keys [entity-id enums]
     ::keys [gql-id description] :as entity}]
-  [(clj-name->gql-name (or gql-id entity-id))
+  [(clj-name->gql-type-name (or gql-id entity-id) nil)
    (merge {:values (->> enums
                         (map (fn [enum]
                                (cond
@@ -321,3 +337,48 @@
                                                      {:entity entity}))))))))}
           (when description
             {:description description}))])
+
+;;; --------------------------------------------------------------------------------
+
+(defn schema->gql
+  [schema]
+  (let [ret-types (return-types schema)
+        args      (end-point-args schema)
+        ;;
+        out-entity-ids (->> ret-types
+                            (map second)
+                            (map :entity-id)
+                            distinct
+                            osc/walk-entities)
+        in-entity-ids  (->> args
+                            (mapcat second)
+                            (map :entity-id)
+                            distinct
+                            osc/walk-entities)
+        ;;
+        enums     (some->> (concat out-entity-ids in-entity-ids)
+                           (filter osc/enum?)
+                           seq
+                           distinct
+                           (map #(-> % osc/scalar scalar->enum))
+                           (into {}))
+        ;;
+        out-objects   (some->> out-entity-ids
+                               (filter osc/rec?)
+                               seq
+                               (map #(-> % osc/rec (rec->object :out)))
+                               (into {}))
+        in-objects    (some->> in-entity-ids
+                               (filter osc/rec?)
+                               seq
+                               (map #(-> % osc/rec (rec->object :out)))
+                               (into {}))]
+    (println in-entity-ids)
+    {:enums         enums
+     :objects       out-objects
+     :input-objects in-objects
+     ;;
+     ;; :unions        unions
+     ;; :queries       (endpoints->endpoints queries)
+     ;; :mutations     (endpoints->endpoints mutations)
+     }))
