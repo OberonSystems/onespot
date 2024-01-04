@@ -1,7 +1,8 @@
 (ns onespot.json
   (:require [clojure.string :as s]
             [camel-snake-kebab.core :as csk]
-            [onespot.utils :refer [map-entry]]
+            [oberon.utils :refer [map-entry]]
+            ;;
             [onespot.core :as osc]))
 
 (defn kind

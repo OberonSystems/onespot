@@ -1,12 +1,10 @@
 (ns onespot.lacinia
   (:require [clojure.string :as s]
             [clojure.walk :refer [postwalk]]
-            ;;
             [camel-snake-kebab.core :as csk :refer [->PascalCaseKeyword
                                                     ->camelCaseKeyword]]
+            [oberon.utils :refer [nil-when->> map-entry hash-map*]]
             ;;
-            [oberon.utils :refer [nil-when->>]]
-            [onespot.utils :refer [map-entry hash-map*]]
             [onespot.core :as osc]))
 
 ;;; --------------------------------------------------------------------------------

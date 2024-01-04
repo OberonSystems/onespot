@@ -22,7 +22,7 @@
 
 (deftest test-scalars-1
   (register-scalars!)
-  (is (= (label     :string1) "String 1"))
+  (is (= (label     :string1) "String1"))
   (is (= (validator :string1) non-blank-string))
 
   (is (= (label       :string2) "My Label"))

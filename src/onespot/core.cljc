@@ -2,10 +2,7 @@
   (:require [clojure.pprint :refer [pprint]]
             [clojure.set :refer [subset? intersection union difference]]
             ;;
-            [oberon.utils :refer [nil-when->]]
-            ;;
-            ;; FIXME: Move these to oberon utils
-            [onespot.utils :refer [keyword->label ns-keyword->keyword hash-map*]]))
+            [oberon.utils :refer [nil-when-> hash-map* capitalize-keyword]]))
 
 ;;;
 
@@ -159,7 +156,7 @@
   (when-not (registered? entity-id)
     (throw (ex-info (format "Can't find/compute a label for an unregistered entity: `%s`." entity-id))))
   (or (-> entity-id canonical-entity-id pull ::label)
-      (keyword->label entity-id)))
+      (capitalize-keyword entity-id)))
 
 ;;; --------------------------------------------------------------------------------
 
