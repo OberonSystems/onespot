@@ -1,14 +1,18 @@
 (ns onespot.json
   (:require [clojure.string :as s]
+            [camel-snake-kebab.core :as csk]
             [onespot.utils :refer [map-entry]]
             [onespot.core :as osc]))
+
+(defn kind
+  [entity]
+  (::kind entity))
 
 ;;;
 
 (defn- kind-dispatcher
-  [{entity-kind ::osc/kind
-    json-kind   ::kind} value]
-  [entity-kind (or json-kind ::default)])
+  [entity value]
+  [(osc/kind entity) (or (kind entity) ::default)])
 
 (defmulti entity->json kind-dispatcher)
 
@@ -18,9 +22,13 @@
   ;; handle.
   value)
 
-(defmethod entity->json [::osc/scalar :enum]
+(defmethod entity->json [::osc/scalar ::keyword]
   [entity value]
-  (-> value name s/upper-case))
+  (-> value csk/->kebab-case-string))
+
+(defmethod entity->json [::osc/scalar ::enum]
+  [entity value]
+  (-> value name csk/->SCREAMING_SNAKE_CASE_STRING))
 
 (defmethod entity->json [::osc/attr ::default]
   [{::osc/keys [entity-id] :as entity} value]
@@ -43,6 +51,21 @@
 ;;; --------------------------------------------------------------------------------
 
 (defmulti json->entity kind-dispatcher)
+
+(defmethod json->entity [::osc/scalar ::default]
+  [entity value]
+  ;; No coercion, assumes it's a native type that is already a valid clojure value
+  value)
+
+(defmethod entity->json [::osc/scalar ::keyword]
+  [entity value]
+  (-> value csk/->kebab-case-keyword))
+
+(defmethod entity->json [::osc/scalar ::enum]
+  [entity value]
+  (-> value csk/->kebab-case-keyword))
+
+;;; --------------------------------------------------------------------------------
 
 (defn write-json
   [entish value]
