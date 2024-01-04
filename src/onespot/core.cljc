@@ -5,7 +5,7 @@
             [oberon.utils :refer [nil-when->]]
             ;;
             ;; FIXME: Move these to oberon utils
-            [onespot.utils :refer [keyword->label ns-keyword->keyword]]))
+            [onespot.utils :refer [keyword->label ns-keyword->keyword hash-map*]]))
 
 ;;;
 
@@ -40,6 +40,29 @@
        (-> @+registry+
            (get entity-id)
            (contains? ::enums))))
+
+(defn canonicalise-enums
+  "Accepts a sequence of
+  - value, description maps or
+  - value keywords
+  and converts it into a vector maps that contain at least a :value.
+
+  Any additional values contained in the maps are preserved."
+  [enums]
+  (->> enums
+       (mapv (fn [enum]
+               (cond
+                 (keyword? enum) {:value enum}
+                 ;;
+                 (and (map? enum) (contains? enum :value)) enum
+                 ;;
+                 (and (vector? enum)
+                      (< 0 (count enum) 3))
+                 (hash-map* :value       (first enum)
+                            :description (second enum))
+                 ;;
+                 :else (throw (ex-info (format "Can't canonicalise %s into an enum." enum)
+                                       {:enum enum})))))))
 
 (defn rec?
   [entity-id]
