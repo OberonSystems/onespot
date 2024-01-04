@@ -9,7 +9,7 @@
   []
   (clear!)
   (scalar! :string1 non-blank-string?)
-  (scalar! :string2 global-keyword ::osj/kind :enum)
+  (scalar! :string2 global-keyword ::osj/kind ::osj/enum)
   (scalar! :string3 non-blank-string?)
   (scalar! :boolean true-or-false))
 

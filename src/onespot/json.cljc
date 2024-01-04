@@ -58,11 +58,11 @@
   ;; No coercion, assumes it's a native type that is already a valid clojure value
   value)
 
-(defmethod entity->json [::osc/scalar ::keyword]
+(defmethod json->entity [::osc/scalar ::keyword]
   [entity value]
   (-> value csk/->kebab-case-keyword))
 
-(defmethod entity->json [::osc/scalar ::enum]
+(defmethod json->entity [::osc/scalar ::enum]
   [entity value]
   (-> value csk/->kebab-case-keyword))
 
