@@ -3,13 +3,9 @@
             ;;
             [onespot.core :as osc]
             ;;
-            #?@(:cljs
-                [[goog.string :as gstring]
-                 [goog.string.format]])
-            ;;
             #_[clojure.set    :refer [rename-keys]]
             #_[clojure.pprint :refer [pprint]])
-  #?(:clj (:import [java.time Instant LocalDate])))
+  (:import [java.time Instant LocalDate]))
 
 (defn non-blank-string?
   [x]
