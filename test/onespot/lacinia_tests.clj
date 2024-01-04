@@ -87,6 +87,22 @@
              :shirtSize  {:type (not-null :ShirtSizeType)}
              :isActive   {:type (not-null Boolean)}}}])))
 
+(deftest test-enums
+  (register-common!)
+  (is (= (-> :shirt-size-type osc/scalar osl/scalar->enum)
+         [:ShirtSizeType
+          {:values
+           [{:enum-value :SM :description "Small"}
+            {:enum-value :MD :description "Medium"}
+            {:enum-value :LG :description "Large"}
+            {:enum-value :XL :description "Extra Large"}]}]))
+
+  (scalar! :enum-1     (fn [& _])
+           ::osc/enums (osc/canonicalise-enums [[:value1 :description]
+                                                :value2]))
+  (println (-> :enum-1 osc/scalar osl/scalar->enum)
+           [:Enum1 {:values [{:enum-value :VALUE_1, :description :description} :VALUE_2]}]))
+
 (deftest test-simple-schema
   (register-common!)
   (let [schema {:queries {:fetch-person {:type    :person

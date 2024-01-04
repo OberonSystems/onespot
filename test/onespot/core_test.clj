@@ -228,3 +228,16 @@
   ;; referenced type and should be included either way.
   (is (= (walk-entities :people)
          (walk-entities [:person :people]))))
+
+(deftest test-enums
+  (is (= (osc/canonicalise-enums [:test :this])
+         [{:value :test} {:value :this}]))
+
+  (is (= (osc/canonicalise-enums [[:value1 :desc1]
+                                  [:value2]
+                                  [:value3 :desc3]
+                                  :value4])
+         [{:value :value1 :description :desc1}
+          {:value :value2}
+          {:value :value3 :description :desc3}
+          {:value :value4}])))
