@@ -5,7 +5,8 @@
             [camel-snake-kebab.core :as csk :refer [->PascalCaseKeyword
                                                     ->camelCaseKeyword]]
             ;;
-            [onespot.utils :refer [map-entry]]
+            [oberon.utils :refer [nil-when->>]]
+            [onespot.utils :refer [map-entry hash-map*]]
             [onespot.core :as osc]))
 
 ;;; --------------------------------------------------------------------------------
@@ -356,13 +357,6 @@
                             distinct
                             osc/walk-entities)
         ;;
-        enums     (some->> (concat out-entity-ids in-entity-ids)
-                           (filter osc/enum?)
-                           seq
-                           distinct
-                           (map #(-> % osc/scalar scalar->enum))
-                           (into {}))
-        ;;
         out-objects   (some->> out-entity-ids
                                (filter osc/rec?)
                                seq
@@ -371,14 +365,30 @@
         in-objects    (some->> in-entity-ids
                                (filter osc/rec?)
                                seq
-                               (map #(-> % osc/rec (rec->object :out)))
-                               (into {}))]
-    (println in-entity-ids)
+                               (map #(-> % osc/rec (rec->object :in)))
+                               (into {}))
+        enums         (some->> (concat out-entity-ids in-entity-ids)
+                               (filter osc/enum?)
+                               seq
+                               distinct
+                               (map #(-> % osc/scalar scalar->enum))
+                               (into {}))
+        ;;
+        ->endpoints   (fn [k]
+                        (->> schema k
+                             (map (fn [[clj-name end-point]]
+                                    [(clj-name->gql-name clj-name)
+                                     (hash-map* {:type (-> end-point :type ret-types :gql-type)}
+                                                :args  (->> args
+                                                            clj-name
+                                                            (map (fn [{:keys [gql-arg-id gql-type]}]
+                                                                   [gql-arg-id {:type gql-type}]))
+                                                            (into {})
+                                                            (nil-when->> empty?))
+                                                :resolve (end-point :resolve))]))
+                             (into {})))]
     {:enums         enums
      :objects       out-objects
      :input-objects in-objects
-     ;;
-     ;; :unions        unions
-     ;; :queries       (endpoints->endpoints queries)
-     ;; :mutations     (endpoints->endpoints mutations)
-     }))
+     :queries       (->endpoints :queries)
+     :mutations     (->endpoints :mutations)}))

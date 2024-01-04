@@ -1,5 +1,6 @@
 (ns onespot.lacinia-tests
-  (:require [clojure.test :refer [deftest testing is run-tests]]
+  (:require [clojure.pprint :refer [pprint]]
+            [clojure.test :refer [deftest testing is run-tests]]
             [clojure.data :refer [diff]])
   (:require [onespot.core :refer :all :as osc]
             [onespot.lacinia :as osl]
@@ -85,3 +86,41 @@
              :familyName {:type (not-null String)}
              :shirtSize  {:type (not-null :ShirtSizeType)}
              :isActive   {:type (not-null Boolean)}}}])))
+
+(deftest test-simple-schema
+  (register-common!)
+  (let [schema {:queries {:fetch-person {:type    :person
+                                         :args    {:person-id nil}
+                                         :resolve :resolver-placeholder}
+                          :fetch-people {:type :people}}
+                ;;
+                :mutations {:modify-person {:type :person
+                                            :args {:person nil}}}}]
+    (is (= (keys (osl/return-types schema))
+           [:person :people]))
+
+    (is (= (osl/end-point-args schema)
+           {:fetch-person  [{:entity-id      :person-id
+                             :attr-entity-id :positive-integer
+                             :clj-arg-id     :person-id
+                             :gql-arg-id     :personId
+                             :gql-type       '(not-null Int)}]
+            :modify-person [{:entity-id  :person
+                             :clj-arg-id :person
+                             :gql-arg-id :person
+                             :gql-type   '(not-null :PersonIn)
+                             :many?      false
+                             :optional?  false}]}))
+    ;;
+    (let [{:keys [enums objects input-objects queries mutations] :as gql} (osl/schema->gql schema)]
+      (is (= (keys enums)         [:ShirtSizeType]))
+      (is (= (keys objects)       [:PersonOut]))
+      (is (= (keys input-objects) [:PersonIn]))
+      (is (= queries
+             '{:fetchPerson {:type    (not-null :PersonOut)
+                             :args    {:personId {:type (not-null Int)}}
+                             :resolve :resolver-placeholder}
+               :fetchPeople {:type (not-null (list (not-null :PersonOut)))}}))
+      (is (= mutations
+             '{:modifyPerson {:type (not-null :PersonOut)
+                              :args {:person {:type (not-null :PersonIn)}}}})))))
