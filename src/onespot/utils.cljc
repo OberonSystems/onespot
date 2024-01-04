@@ -18,7 +18,6 @@
   [k v]
   (MapEntry/create k v))
 
-#_
 (defn hash-map*
   [& [head & tail :as params]]
   (let [[head tail] (if (-> params count odd?)
