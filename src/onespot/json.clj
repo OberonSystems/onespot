@@ -7,7 +7,9 @@
             ;;
             [oberon.utils :refer [map-entry]]
             ;;
-            [onespot.core :as osc]))
+            [onespot.core :as osc])
+  (:import [java.time Instant LocalDate]))
+
 ;;; --------------------------------------------------------------------------------
 ;;  Memoized as recommended by CSK project.
 
@@ -41,86 +43,91 @@
 
 (defn- kind-dispatcher
   [entity value]
-  [(osc/kind entity) (or (kind entity) ::default)])
+  (or (kind entity) (osc/kind entity)))
 
 (defmulti entity->json kind-dispatcher)
 
-(defmethod entity->json [::osc/scalar ::default]
+(defmethod entity->json :default
   [entity value]
-  ;; No coercion, assumes it's a native type that the json writer can
-  ;; handle.
-  value)
+  (case (osc/kind entity)
+    ::osc/scalar value
+    ;;
+    ::osc/attr   (let [{::osc/keys [entity-id]
+                        ::keys [json-id]} entity]
+                   (map-entry (-> (or json-id entity-id))
+                              (entity->json (osc/attr-entity entity)
+                                            (get value entity-id))))
+    ;;
+    ::osc/rec    (->> (osc/rec-attrs entity)
+                      (map #(entity->json % value))
+                      (into {}))
 
-(defmethod entity->json [::osc/scalar ::keyword]
+    ::osc/series (let [series-entity (osc/series-entity entity)]
+                   (mapv #(entity->json series-entity %)
+                         value))))
+
+(defmethod entity->json :keyword
   [entity value]
   (-> value ->kebab-case-string))
 
-(defmethod entity->json [::osc/scalar ::enum]
+(defmethod entity->json :local-date
+  [entity value]
+  (some-> value .toString))
+
+(defmethod entity->json :instant
+  [entity value]
+  (some-> value .toString))
+
+;;; Specialised to this module
+
+(defmethod entity->json ::enum
   [entity value]
   (-> value name ->SCREAMING_SNAKE_CASE_STRING))
-
-
-(defmethod entity->json [::osc/attr ::default]
-  [{::osc/keys [entity-id]
-    ::keys [json-id]
-    :as entity} value]
-  (map-entry (-> (or json-id entity-id))
-             (entity->json (osc/attr-entity entity)
-                           (get value entity-id))))
-
-(defmethod entity->json [::osc/rec ::default]
-  [entity value]
-  (->> (osc/rec-attrs entity)
-       (map #(entity->json % value))
-       (into {})))
-
-(defmethod entity->json [::osc/series ::default]
-  [entity value]
-  (let [series-entity (osc/series-entity entity)]
-    (mapv #(entity->json series-entity %)
-          value)))
 
 ;;; --------------------------------------------------------------------------------
 
 (defmulti json->entity kind-dispatcher)
 
-(defmethod json->entity [::osc/scalar ::default]
+(defmethod json->entity :default
   [entity value]
-  ;; No coercion, assumes it's a native type that is already a valid clojure value
-  value)
+  (case (osc/kind entity)
+    ::osc/scalar value
+    ;;
+    ::osc/attr   (let [{::osc/keys [entity-id]
+                        ::keys [json-id]} entity]
+                   (map-entry entity-id
+                              (json->entity (osc/attr-entity entity)
+                                            (get value json-id
+                                                 ;; Pass default value to `get` to
+                                                 ;; ensure `false` is returned rather
+                                                 ;; than (or ...).
+                                                 (get value entity-id)))))
+    ;;
+    ::osc/rec    (->> (osc/rec-attrs entity)
+                      (map #(json->entity % value))
+                      (into {}))
+    ;;
+    ::osc/series (let [series-entity (osc/series-entity entity)]
+                   (mapv #(json->entity series-entity %)
+                         value))))
 
-(defmethod json->entity [::osc/scalar ::keyword]
+(defmethod json->entity :keyword
   [entity value]
   (-> value ->kebab-case-keyword))
 
-(defmethod json->entity [::osc/scalar ::enum]
+(defmethod json->entity :local-date
+  [entity value]
+  (some-> value LocalDate/parse))
+
+(defmethod json->entity :instant
+  [entity value]
+  (some-> value Instant/parse))
+
+;;; Specialised to this module
+
+(defmethod json->entity ::enum
   [entity value]
   (-> value ->kebab-case-keyword))
-
-
-(defmethod json->entity [::osc/attr ::default]
-  [{::osc/keys [entity-id]
-    ::keys [json-id]
-    :as entity} value]
-  (map-entry entity-id
-             (json->entity (osc/attr-entity entity)
-                           (get value json-id
-                                ;; Pass default value to `get` to
-                                ;; ensure `false` is returned rather
-                                ;; than (or ...).
-                                (get value entity-id)))))
-
-(defmethod json->entity [::osc/rec ::default]
-  [entity value]
-  (->> (osc/rec-attrs entity)
-       (map #(json->entity % value))
-       (into {})))
-
-(defmethod json->entity [::osc/series ::default]
-  [entity value]
-  (let [series-entity (osc/series-entity entity)]
-    (mapv #(json->entity series-entity %)
-          value)))
 
 ;;; --------------------------------------------------------------------------------
 
