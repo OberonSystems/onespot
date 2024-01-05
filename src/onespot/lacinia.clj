@@ -51,13 +51,13 @@
                      (clj-name->gql-type-name field-type in-out))]
     (cond
       many? (let [term (list 'list
-                             (list 'not-null gql-type))]
+                             (list 'non-null gql-type))]
               (if optional?
                 term
-                (list 'not-null term)))
+                (list 'non-null term)))
       :else (if optional?
               gql-type
-              (list 'not-null gql-type)))))
+              (list 'non-null gql-type)))))
 
 ;;; --------------------------------------------------------------------------------
 
