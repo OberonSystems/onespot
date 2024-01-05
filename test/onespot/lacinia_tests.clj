@@ -100,8 +100,8 @@
   (scalar! :enum-1     (fn [& _])
            ::osc/enums (osc/canonicalise-enums [[:value1 :description]
                                                 :value2]))
-  (println (-> :enum-1 osc/scalar osl/scalar->enum)
-           [:Enum1 {:values [{:enum-value :VALUE_1, :description :description} :VALUE_2]}]))
+  (is (= (-> :enum-1 osc/scalar osl/scalar->enum)
+         [:Enum1 {:values [{:enum-value :VALUE_1, :description :description} :VALUE_2]}])))
 
 (deftest test-simple-schema
   (register-common!)
