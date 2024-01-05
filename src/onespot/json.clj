@@ -1,9 +1,37 @@
 (ns onespot.json
   (:require [clojure.string :as s]
+            [clojure.core.memoize :as m]
+            ;;
             [camel-snake-kebab.core :as csk]
+            [camel-snake-kebab.extras :as cske]
+            ;;
             [oberon.utils :refer [map-entry]]
             ;;
             [onespot.core :as osc]))
+;;; --------------------------------------------------------------------------------
+;;  Memoized as recommended by CSK project.
+
+(def ->camelCase
+  (m/fifo csk/->camelCase {} :fifo/threshold 1024))
+
+(def ->kebab-case-string
+  (m/fifo csk/->kebab-case-string {} :fifo/threshold 1024))
+
+(def ->kebab-case-keyword
+  (m/fifo csk/->kebab-case-keyword {} :fifo/threshold 1024))
+
+(def ->SCREAMING_SNAKE_CASE_STRING
+  (m/fifo csk/->SCREAMING_SNAKE_CASE_STRING {} :fifo/threshold 1024))
+
+(defn keys->camel-case
+  [m]
+  (cske/transform-keys ->camelCase m))
+
+(defn keys->kebab-case
+  [m]
+  (cske/transform-keys ->kebab-case-keyword m))
+
+;;; --------------------------------------------------------------------------------
 
 (defn kind
   [entity]
@@ -25,11 +53,12 @@
 
 (defmethod entity->json [::osc/scalar ::keyword]
   [entity value]
-  (-> value csk/->kebab-case-string))
+  (-> value ->kebab-case-string))
 
 (defmethod entity->json [::osc/scalar ::enum]
   [entity value]
-  (-> value name csk/->SCREAMING_SNAKE_CASE_STRING))
+  (-> value name ->SCREAMING_SNAKE_CASE_STRING))
+
 
 (defmethod entity->json [::osc/attr ::default]
   [{::osc/keys [entity-id]
@@ -62,11 +91,12 @@
 
 (defmethod json->entity [::osc/scalar ::keyword]
   [entity value]
-  (-> value csk/->kebab-case-keyword))
+  (-> value ->kebab-case-keyword))
 
 (defmethod json->entity [::osc/scalar ::enum]
   [entity value]
-  (-> value csk/->kebab-case-keyword))
+  (-> value ->kebab-case-keyword))
+
 
 (defmethod json->entity [::osc/attr ::default]
   [{::osc/keys [entity-id]
