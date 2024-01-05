@@ -43,12 +43,13 @@
 
 (defn- kind-dispatcher
   [entity value]
-  (or (kind entity) (osc/kind entity)))
+  (or (kind entity) (osc/entity-id entity)))
 
 (defmulti entity->json kind-dispatcher)
 
 (defmethod entity->json :default
   [entity value]
+  ;;(println (kind-dispatcher entity value) entity value)
   (case (osc/kind entity)
     ::osc/scalar value
     ;;
@@ -90,6 +91,7 @@
 
 (defmethod json->entity :default
   [entity value]
+  ;;(println (kind-dispatcher entity value) entity value)
   (case (osc/kind entity)
     ::osc/scalar value
     ;;
