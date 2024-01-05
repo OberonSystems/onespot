@@ -157,7 +157,7 @@
              :bad-value)))
 
 (deftest test-series-1
-  (register-common!)
+  (register-all!)
 
   (is (code? (validate :some-strings nil)
              :missing-value))
@@ -216,7 +216,7 @@
              :empty-value)))
 
 (deftest test-walking-recs
-  (register-common!)
+  (register-all!)
   (is (= (walk-entities :given-name)
          #{:given-name :string}))
 

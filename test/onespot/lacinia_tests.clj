@@ -20,7 +20,7 @@
 ;;; --------------------------------------------------------------------------------
 
 (deftest test-return-types
-  (register-common!)
+  (register-all!)
 
   (is (= (osl/return-type->field-ref :string)
          {:entity-id :string
@@ -43,7 +43,7 @@
           :many? true})))
 
 (deftest test-arg-types
-  (register-common!)
+  (register-all!)
   (is (= (osl/arg->field-ref :person-id nil)
          {:entity-id      :person-id
           :attr-entity-id :positive-integer
@@ -60,7 +60,7 @@
           :optional?  false})))
 
 (deftest test-entity->field-ref
-  (register-common!)
+  (register-all!)
   (is (= (osl/entity->field-ref :string :in false)
          {:type '(non-null String)}))
 
@@ -77,7 +77,7 @@
          {:type '(list (non-null :PersonOut))})))
 
 (deftest test-rec->gql-object
-  (register-common!)
+  (register-all!)
   (is (= (osl/rec->object (osc/pull :person) :in)
          '[:PersonIn
            {:fields
@@ -88,7 +88,7 @@
              :isActive   {:type (non-null Boolean)}}}])))
 
 (deftest test-enums
-  (register-common!)
+  (register-all!)
   (is (= (-> :shirt-size-type osc/scalar osl/scalar->enum)
          [:ShirtSizeType
           {:values
@@ -104,7 +104,7 @@
          [:Enum1 {:values [{:enum-value :VALUE_1, :description :description} :VALUE_2]}])))
 
 (deftest test-simple-schema
-  (register-common!)
+  (register-all!)
   (let [schema {:queries {:fetch-person {:type    :person
                                          :args    {:person-id nil}
                                          :resolve :resolver-placeholder}

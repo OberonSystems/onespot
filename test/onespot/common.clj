@@ -2,8 +2,9 @@
   (:require [clojure.test :refer [deftest testing is run-tests]])
   (:require [onespot.core :refer :all :as osc]
             [onespot.validators :refer :all]
-            [onespot.lacinia :as osl]
-            [onespot.json :as osj]
+            [onespot.lacinia  :as osl]
+            [onespot.json     :as osj]
+            [onespot.entities :as ose]
             :reload))
 
 (def +shirt-size-enums+
@@ -25,6 +26,7 @@
 (defn register-scalars!
   []
   (clear!)
+  (ose/register-common!)
   (scalar! :string1 non-blank-string)
   (scalar! :string2 non-blank-string
            ::osc/label       "My Label"
@@ -64,7 +66,7 @@
   (series! :enum-types :enum-type)
   (attr! :enums :enum-types))
 
-(defn register-common!
+(defn register-all!
   []
   (clear!)
   (register-attrs!)
