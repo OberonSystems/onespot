@@ -68,6 +68,30 @@
   [entity value]
   (-> value csk/->kebab-case-keyword))
 
+(defmethod json->entity [::osc/attr ::default]
+  [{::osc/keys [entity-id]
+    ::keys [json-id]
+    :as entity} value]
+  (map-entry entity-id
+             (json->entity (osc/attr-entity entity)
+                           (get value json-id
+                                ;; Pass default value to `get` to
+                                ;; ensure `false` is returned rather
+                                ;; than (or ...).
+                                (get value entity-id)))))
+
+(defmethod json->entity [::osc/rec ::default]
+  [entity value]
+  (->> (osc/rec-attrs entity)
+       (map #(json->entity % value))
+       (into {})))
+
+(defmethod json->entity [::osc/series ::default]
+  [entity value]
+  (let [series-entity (osc/series-entity entity)]
+    (mapv #(json->entity series-entity %)
+          value)))
+
 ;;; --------------------------------------------------------------------------------
 
 (defn write-json

@@ -3,61 +3,48 @@
   (:require [onespot.core :refer :all :as osc]
             [onespot.validators :refer :all]
             [onespot.json :as osj :refer [write-json read-json]]
+            [onespot.common :refer :all]
             :reload))
 
-(defn register-scalars!
-  []
-  (clear!)
-  (scalar! :string1 non-blank-string?)
-  (scalar! :enum1 global-keyword ::osj/kind ::osj/enum)
-  (scalar! :boolean true-or-false))
-
-(defn register-attrs!
-  []
-  (register-scalars!)
-  (attr! :given-name :string1
-         ::osj/json-id :the-given-name)
-
-  (attr! :active? :boolean
-         ::osj/json-id :is-active)
-
-  (attr! :enum :enum1)
-
-  (series! :enum1s :enum1)
-  (attr! :enums :enum1s))
-
-;;;
-
-(deftest scalar-tests-1
+(deftest test-scalars
   (register-scalars!)
 
-  (is (= (write-json :string1 "a string")))
-  (is (= (write-json :enum1 :test) "TEST")))
+  (is (= (write-json :string1 "a string") "a string"))
+  (is (= (write-json :boolean true) true))
+  (is (= (write-json :enum-type :test) "TEST"))
 
-(deftest attr-tests-1
+  (is (= (read-json :string1 "a string") "a string"))
+  (is (= (read-json :boolean true) true))
+  (is (= (read-json :enum-type "TEST") :test))
+
+  ;; FIXME Add tests for dates and instants
+  (do ))
+
+(deftest test-attrs
   (register-attrs!)
 
-  (is (= (write-json :given-name {:given-name "my name is ..."})
-         [:the-given-name "my name is ..."]))
-  (is (= (write-json :active? {:active? true})
-         [:is-active true]))
+  (is (= (write-json :given-name {:given-name "my name is ..."}) [:the-given-name "my name is ..."]))
+  (is (= (write-json :active?    {:active? true})                [:is-active true]))
+  (is (= (write-json :enum       {:enum :test})                  [:enum "TEST"]))
 
-  (is (= (write-json :enum {:enum :test}) [:enum "TEST"])))
+  (is (= (read-json :given-name {:the-given-name "my name is ..."}) [:given-name "my name is ..."]))
+  (is (= (read-json :active?    {:is-active true})                  [:active? true]))
+  (is (= (read-json :enum       {:enum "TEST"})                     [:enum :test])))
 
-(deftest rec-tests-1
+(deftest test-recs
   (register-attrs!)
+  (rec! :person1 [:given-name :active? :enum])
+  (rec! :person2 [:given-name :active? :enums])
 
-  (rec! :person [:given-name :active? :enum])
-  (is (= (write-json :person {:given-name "Bob"
-                              :active? false
-                              :enum :test})
-         {:the-given-name "Bob"
-          :is-active      false
-          :enum           "TEST"}))
+  (let [clj  {:given-name     "Bob" :active?   false :enum :test}
+        json {:the-given-name "Bob" :is-active false :enum "TEST"}]
+    (is (= (write-json :person1 clj) json))
+    (is (= (read-json :person1 json) clj)))
 
-  (rec! :person [:given-name :active? :enums])
-  (is (= (write-json :person {:given-name "Bob" :active? false :enums [:one :two]})
-         {:the-given-name "Bob" :is-active false :enums ["ONE" "TWO"]})))
+  (let [clj  {:given-name "Bob" :active? false :enums [:one :two]}
+        json {:the-given-name "Bob" :is-active false :enums ["ONE" "TWO"]}]
+    (is (= (write-json :person2 clj)  json))
+    (is (= (read-json  :person2 json) clj))))
 
 (deftest test-nested-recs
   (register-attrs!)
@@ -117,13 +104,13 @@
                     :contact-infos [{:contact-type "MOBILE" :contact-value "1234"}
                                     {:contact-type "EMAIL"  :contact-value "blah@blah"}]}]})))
 
-(deftest series-tests-1
+(deftest test-series
   (register-attrs!)
 
   (series! :strings :string1)
   (is (= (write-json :strings ["one" "two"]) ["one" "two"]))
 
-  (series! :one-two :enum1)
+  (series! :one-two :enum-type)
   (is (= (write-json :one-two [:one :two]) ["ONE" "TWO"]))
 
   (rec! :person [:given-name :active? :enums])

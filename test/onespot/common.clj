@@ -3,6 +3,7 @@
   (:require [onespot.core :refer :all :as osc]
             [onespot.validators :refer :all]
             [onespot.lacinia :as osl]
+            [onespot.json :as osj]
             :reload))
 
 (def +shirt-size-enums+
@@ -36,16 +37,16 @@
   (scalar! :positive-integer positive-integer ::osl/gql-type :int)
   (scalar! :string           non-blank-string)
   (scalar! :boolean          true-or-false)
+  (scalar! :enum-type        global-keyword ::osj/kind ::osj/enum)
   (scalar! :shirt-size-type  validate-shirt-size
-           ;;
-           ::osc/enums +shirt-size-enums+)
-  )
+           ::osc/enums +shirt-size-enums+
+           ::osj/kind  ::osj/enum))
 
 (defn register-attrs!
   []
   (register-scalars!)
   (attr! :person-id   :positive-integer)
-  (attr! :given-name  :string)
+  (attr! :given-name  :string ::osj/json-id :the-given-name)
   (attr! :nickname    :string)
   (attr! :family-name :string
          ::osc/label "The Family Name")
@@ -53,9 +54,15 @@
   (attr! :contact-type  :contact-type-enum)
   (attr! :contact-value :string1)
 
+  (attr! :active?      :boolean
+         ::osl/gql-id  :is-active
+         ::osj/json-id :is-active)
+
   (attr! :shirt-size  :shirt-size-type)
-  (attr! :active?     :boolean
-         ::osl/gql-id :is-active))
+  (attr! :enum :enum-type)
+
+  (series! :enum-types :enum-type)
+  (attr! :enums :enum-types))
 
 (defn register-common!
   []
