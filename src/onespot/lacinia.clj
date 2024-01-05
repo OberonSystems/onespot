@@ -129,7 +129,7 @@
         {:entity-id  entity-id
          :clj-arg-id arg-id
          :gql-arg-id (-> (or (when info-type? arg-id)
-                             (entity ::gql-arg-id)
+                             (entity ::gql-id)
                              arg-id)
                          ->camelCaseKeyword)
          :gql-type   (->gql-type (or (entity ::gql-type)
@@ -146,7 +146,7 @@
          ;;
          :clj-arg-id  arg-id
          :gql-arg-id  (-> (or (when info-type? arg-id)
-                              (entity ::gql-arg-id)
+                              (entity ::gql-id)
                               arg-id)
                           ->camelCaseKeyword)
          :gql-type    (->gql-type (or (series-entity ::gql-type)
@@ -163,7 +163,7 @@
          ;;
          :clj-arg-id  arg-id
          :gql-arg-id  (-> (or (when info-type? arg-id)
-                              (entity ::gql-arg-id)
+                              (entity ::gql-id)
                               arg-id)
                           ->camelCaseKeyword)
          :gql-type    (->gql-type (or (attr-entity ::gql-type)
