@@ -32,8 +32,10 @@
   (-> value name csk/->SCREAMING_SNAKE_CASE_STRING))
 
 (defmethod entity->json [::osc/attr ::default]
-  [{::osc/keys [entity-id] :as entity} value]
-  (map-entry (-> (or (entity ::entity-id) entity-id))
+  [{::osc/keys [entity-id]
+    ::keys [json-id]
+    :as entity} value]
+  (map-entry (-> (or json-id entity-id))
              (entity->json (osc/attr-entity entity)
                            (get value entity-id))))
 

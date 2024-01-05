@@ -9,18 +9,19 @@
   []
   (clear!)
   (scalar! :string1 non-blank-string?)
-  (scalar! :string2 global-keyword ::osj/kind ::osj/enum)
-  (scalar! :string3 non-blank-string?)
+  (scalar! :enum1 global-keyword ::osj/kind ::osj/enum)
   (scalar! :boolean true-or-false))
 
 (defn register-attrs!
   []
   (register-scalars!)
   (attr! :given-name :string1
-         ::osj/entity-id :the-given-name)
+         ::osj/json-id :the-given-name)
 
   (attr! :active? :boolean
-         ::osj/entity-id :is-active))
+         ::osj/json-id :is-active)
+
+  (attr! :enum :enum1))
 
 ;;;
 
@@ -28,7 +29,7 @@
   (register-scalars!)
 
   (is (= (write-json :string1 "a string")))
-  (is (= (write-json :string2 :test) "TEST")))
+  (is (= (write-json :enum1 :test) "TEST")))
 
 (deftest attr-tests-1
   (register-attrs!)
@@ -49,7 +50,7 @@
   (series! :strings :string1)
   (is (= (write-json :strings ["one" "two"]) ["one" "two"]))
 
-  (series! :enums :string2)
+  (series! :enums :enum1)
   (is (= (write-json :enums [:one :two]) ["ONE" "TWO"]))
 
   (rec! :person [:given-name :active?])
