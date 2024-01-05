@@ -24,22 +24,22 @@
 
   (is (= (osl/return-type->field-ref :string)
          {:entity-id :string
-          :gql-type  '(not-null String)
+          :gql-type  '(non-null String)
           :many?     false}))
 
   (is (= (osl/return-type->field-ref [:string])
          {:entity-id :string
-          :gql-type  '(not-null (list (not-null String)))
+          :gql-type  '(non-null (list (non-null String)))
           :many?     true}))
 
   (is (= (osl/return-type->field-ref :person)
          {:entity-id :person
-          :gql-type  '(not-null :PersonOut)
+          :gql-type  '(non-null :PersonOut)
           :many?     false}))
 
   (is (= (osl/return-type->field-ref :people)
          {:entity-id :people
-          :gql-type '(not-null (list (not-null :PersonOut)))
+          :gql-type '(non-null (list (non-null :PersonOut)))
           :many? true})))
 
 (deftest test-arg-types
@@ -49,43 +49,43 @@
           :attr-entity-id :positive-integer
           :clj-arg-id     :person-id
           :gql-arg-id     :personId
-          :gql-type       '(not-null Int)}))
+          :gql-type       '(non-null Int)}))
 
   (is (= (osl/arg->field-ref :person nil)
          {:entity-id  :person
           :clj-arg-id :person
           :gql-arg-id :person
-          :gql-type   '(not-null :PersonIn)
+          :gql-type   '(non-null :PersonIn)
           :many?      false
           :optional?  false})))
 
 (deftest test-entity->field-ref
   (register-common!)
   (is (= (osl/entity->field-ref :string :in false)
-         {:type '(not-null String)}))
+         {:type '(non-null String)}))
 
   (is (= (osl/entity->field-ref :string :in true)
          {:type 'String}))
 
   (is (= (osl/entity->field-ref :person :in false)
-         {:type '(not-null :PersonIn)}))
+         {:type '(non-null :PersonIn)}))
 
   (is (= (osl/entity->field-ref :people :in false)
-         {:type '(not-null (list (not-null :PersonIn)))}))
+         {:type '(non-null (list (non-null :PersonIn)))}))
 
   (is (= (osl/entity->field-ref :people :out true)
-         {:type '(list (not-null :PersonOut))})))
+         {:type '(list (non-null :PersonOut))})))
 
 (deftest test-rec->gql-object
   (register-common!)
   (is (= (osl/rec->object (osc/pull :person) :in)
          '[:PersonIn
            {:fields
-            {:personId   {:type (not-null Int)}
-             :givenName  {:type (not-null String)}
-             :familyName {:type (not-null String)}
-             :shirtSize  {:type (not-null :ShirtSizeType)}
-             :isActive   {:type (not-null Boolean)}}}])))
+            {:personId   {:type (non-null Int)}
+             :givenName  {:type (non-null String)}
+             :familyName {:type (non-null String)}
+             :shirtSize  {:type (non-null :ShirtSizeType)}
+             :isActive   {:type (non-null Boolean)}}}])))
 
 (deftest test-enums
   (register-common!)
@@ -120,11 +120,11 @@
                              :attr-entity-id :positive-integer
                              :clj-arg-id     :person-id
                              :gql-arg-id     :personId
-                             :gql-type       '(not-null Int)}]
+                             :gql-type       '(non-null Int)}]
             :modify-person [{:entity-id  :person
                              :clj-arg-id :person
                              :gql-arg-id :person
-                             :gql-type   '(not-null :PersonIn)
+                             :gql-type   '(non-null :PersonIn)
                              :many?      false
                              :optional?  false}]}))
     ;;
@@ -133,10 +133,10 @@
       (is (= (keys objects)       [:PersonOut]))
       (is (= (keys input-objects) [:PersonIn]))
       (is (= queries
-             '{:fetchPerson {:type    (not-null :PersonOut)
-                             :args    {:personId {:type (not-null Int)}}
+             '{:fetchPerson {:type    (non-null :PersonOut)
+                             :args    {:personId {:type (non-null Int)}}
                              :resolve :resolver-placeholder}
-               :fetchPeople {:type (not-null (list (not-null :PersonOut)))}}))
+               :fetchPeople {:type (non-null (list (non-null :PersonOut)))}}))
       (is (= mutations
-             '{:modifyPerson {:type (not-null :PersonOut)
-                              :args {:person {:type (not-null :PersonIn)}}}})))))
+             '{:modifyPerson {:type (non-null :PersonOut)
+                              :args {:person {:type (non-null :PersonIn)}}}})))))
