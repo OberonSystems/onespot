@@ -306,7 +306,11 @@
                                                      (::osc/entity-id attr)))
                              (entity->field-ref attr-entity
                                                 in-out
-                                                (osc/optional? rec attr))])))
+                                                (case in-out
+                                                  :in  (osc/optional? rec attr)
+                                                  ;; For out objects we leave it up to the caller to
+                                                  ;; decide what they want to grab.
+                                                  :out true))])))
                    (into {}))}])
 
 ;;; --------------------------------------------------------------------------------
