@@ -4,24 +4,37 @@
             [onespot.validators :refer :all]
             [onespot.json :as osj :refer [write-json read-json]]
             [onespot.common :refer :all]
-            :reload))
+            :reload)
+  (:import [java.time LocalDate Instant]))
 
 (deftest test-scalars
   (register-scalars!)
 
-  (is (= (write-json :string1 "a string") "a string"))
   (is (= (write-json :boolean true) true))
+  (is (= (write-json :string  "a string") "a string"))
+  (is (= (write-json :string1 "a string") "a string"))
   (is (= (write-json :enum-type :test) "TEST"))
 
   (is (= (read-json :string1 "a string") "a string"))
   (is (= (read-json :boolean true) true))
   (is (= (read-json :enum-type "TEST") :test))
 
-  ;; FIXME Add tests for dates and instants
-  (do ))
+  (is (= (read-json :local-date "2024-01-01")
+         (LocalDate/parse "2024-01-01")))
+  (is (= (read-json :instant "2024-01-05T23:13:57.254310Z")
+         (Instant/parse "2024-01-05T23:13:57.254310Z"))))
 
 (deftest test-attrs
   (register-attrs!)
+  (let [local-str "2024-01-05"
+        local-obj (LocalDate/parse local-str)]
+    (is (= (write-json :day {:day local-obj}) [:day local-str]))
+    (is (= (read-json  :day {:day local-str}) [:day local-obj])))
+
+  (let [inst-str "2024-01-05T23:13:57.254310Z"
+        inst-obj (Instant/parse inst-str)]
+    (is (= (write-json :now {:now inst-obj}) [:now inst-str]))
+    (is (= (read-json  :now {:now inst-str}) [:now inst-obj])))
 
   (is (= (write-json :given-name {:given-name "my name is ..."}) [:the-given-name "my name is ..."]))
   (is (= (write-json :active?    {:active? true})                [:is-active true]))

@@ -53,6 +53,9 @@
   (attr! :family-name :string
          ::osc/label "The Family Name")
   ;;
+  (attr! :day :local-date)
+  (attr! :now :instant)
+  ;;
   (attr! :contact-type  :contact-type-enum)
   (attr! :contact-value :string1)
 
