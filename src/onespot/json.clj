@@ -50,26 +50,27 @@
 (defmethod entity->json :default
   [entity value]
   ;;(println (kind-dispatcher entity value) entity value)
-  (case (osc/kind entity)
-    ::osc/scalar value
-    ;;
-    ::osc/attr   (let [{::osc/keys [entity-id]
-                        ::keys [json-id]} entity]
-                   (map-entry (-> (or json-id entity-id))
-                              (entity->json (osc/attr-entity entity)
-                                            (get value entity-id))))
-    ;;
-    ::osc/rec    (->> (osc/rec-attrs entity)
-                      (map #(entity->json % value))
-                      (into {}))
+  (when-not (nil? value)
+    (case (osc/kind entity)
+      ::osc/scalar value
+      ;;
+      ::osc/attr   (let [{::osc/keys [entity-id]
+                          ::keys [json-id]} entity]
+                     (map-entry (-> (or json-id entity-id))
+                                (entity->json (osc/attr-entity entity)
+                                              (get value entity-id))))
+      ;;
+      ::osc/rec    (->> (osc/rec-attrs entity)
+                        (map #(entity->json % value))
+                        (into {}))
 
-    ::osc/series (let [series-entity (osc/series-entity entity)]
-                   (mapv #(entity->json series-entity %)
-                         value))))
+      ::osc/series (let [series-entity (osc/series-entity entity)]
+                     (mapv #(entity->json series-entity %)
+                           value)))))
 
 (defmethod entity->json :keyword
   [entity value]
-  (-> value ->kebab-case-string))
+  (some-> value ->kebab-case-string))
 
 (defmethod entity->json :local-date
   [entity value]
@@ -83,7 +84,7 @@
 
 (defmethod entity->json ::enum
   [entity value]
-  (-> value name ->SCREAMING_SNAKE_CASE_STRING))
+  (some-> value name ->SCREAMING_SNAKE_CASE_STRING))
 
 ;;; --------------------------------------------------------------------------------
 
@@ -92,30 +93,31 @@
 (defmethod json->entity :default
   [entity value]
   ;;(println (kind-dispatcher entity value) entity value)
-  (case (osc/kind entity)
-    ::osc/scalar value
-    ;;
-    ::osc/attr   (let [{::osc/keys [entity-id]
-                        ::keys [json-id]} entity]
-                   (map-entry entity-id
-                              (json->entity (osc/attr-entity entity)
-                                            (get value json-id
-                                                 ;; Pass default value to `get` to
-                                                 ;; ensure `false` is returned rather
-                                                 ;; than (or ...).
-                                                 (get value entity-id)))))
-    ;;
-    ::osc/rec    (->> (osc/rec-attrs entity)
-                      (map #(json->entity % value))
-                      (into {}))
-    ;;
-    ::osc/series (let [series-entity (osc/series-entity entity)]
-                   (mapv #(json->entity series-entity %)
-                         value))))
+  (when-not (nil? value)
+   (case (osc/kind entity)
+     ::osc/scalar value
+     ;;
+     ::osc/attr   (let [{::osc/keys [entity-id]
+                         ::keys [json-id]} entity]
+                    (map-entry entity-id
+                               (json->entity (osc/attr-entity entity)
+                                             (get value json-id
+                                                  ;; Pass default value to `get` to
+                                                  ;; ensure `false` is returned rather
+                                                  ;; than (or ...).
+                                                  (get value entity-id)))))
+     ;;
+     ::osc/rec    (->> (osc/rec-attrs entity)
+                       (map #(json->entity % value))
+                       (into {}))
+     ;;
+     ::osc/series (let [series-entity (osc/series-entity entity)]
+                    (mapv #(json->entity series-entity %)
+                          value)))))
 
 (defmethod json->entity :keyword
   [entity value]
-  (-> value ->kebab-case-keyword))
+  (some-> value ->kebab-case-keyword))
 
 (defmethod json->entity :local-date
   [entity value]
@@ -129,7 +131,7 @@
 
 (defmethod json->entity ::enum
   [entity value]
-  (-> value ->kebab-case-keyword))
+  (some-> value ->kebab-case-keyword))
 
 ;;; --------------------------------------------------------------------------------
 

@@ -57,7 +57,12 @@
   (let [clj  {:given-name "Bob" :active? false :enums [:one :two]}
         json {:the-given-name "Bob" :is-active false :enums ["ONE" "TWO"]}]
     (is (= (write-json :person2 clj)  json))
-    (is (= (read-json  :person2 json) clj))))
+    (is (= (read-json  :person2 json) clj)))
+
+  ;; FIXME:: Need to add tests for nil values for optional attributes.
+  ;; When reading the JSON if the value isn't in the JSON then it
+  ;; should be in the entity with a nil value.
+  (do))
 
 (deftest test-nested-recs
   (register-attrs!)
