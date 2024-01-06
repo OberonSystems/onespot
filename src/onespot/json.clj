@@ -10,6 +10,19 @@
             [onespot.core :as osc])
   (:import [java.time Instant LocalDate]))
 
+
+;;; --------------------------------------------------------------------------------
+
+(defn rec-output-ids
+  [entity-id]
+  (-> entity-id osc/rec ::output-ids))
+
+(defn rec-output-attrs
+  [entity-id]
+  (->> (rec-output-ids entity-id)
+       (map osc/attr)
+       seq))
+
 ;;; --------------------------------------------------------------------------------
 ;;  Memoized as recommended by CSK project.
 
@@ -60,7 +73,8 @@
                                 (entity->json (osc/attr-entity entity)
                                               (get value entity-id))))
       ;;
-      ::osc/rec    (->> (osc/rec-attrs entity)
+      ::osc/rec    (->> (concat (osc/rec-attrs    entity)
+                                (rec-output-attrs entity))
                         (map #(entity->json % value))
                         (into {}))
 

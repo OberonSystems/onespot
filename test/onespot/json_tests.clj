@@ -45,7 +45,7 @@
   (is (= (read-json :enum       {:enum "TEST"})                     [:enum :test])))
 
 (deftest test-recs
-  (register-attrs!)
+  (register-all!)
   (rec! :person1 [:given-name :active? :enum])
   (rec! :person2 [:given-name :active? :enums])
 
@@ -59,10 +59,19 @@
     (is (= (write-json :person2 clj)  json))
     (is (= (read-json  :person2 json) clj)))
 
-  ;; FIXME:: Need to add tests for nil values for optional attributes.
-  ;; When reading the JSON if the value isn't in the JSON then it
-  ;; should be in the entity with a nil value.
-  (do))
+  ;; Reading/Writing when entity has additional output attributes
+  (is (= (write-json :person-with-output {:person-id 1234 :given-name "Bob" :family-name "Jane"})
+         {:person-id 1234 :the-given-name "Bob" :family-name "Jane"}))
+
+  (is (= (write-json :person-with-output {:person-id 1234 :given-name "Bob"})
+         {:person-id 1234 :the-given-name "Bob" :family-name nil}))
+  (is (= (write-json :person-with-output {:person-id 1234})
+         {:person-id 1234 :the-given-name nil :family-name nil}))
+  ;;
+  (is (= (read-json :person-with-output {:person-id 1234 :given-name "Bob" :family-name "Jane"})
+         {:person-id 1234, :given-name "Bob"}))
+  (is (= (read-json :person-with-output {:person-id 1234})
+         {:person-id 1234, :given-name nil})))
 
 (deftest test-nested-recs
   (register-attrs!)

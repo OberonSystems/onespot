@@ -88,4 +88,10 @@
   (rec! :new-person
         (osc/rec-value-ids :person))
 
-  (series! :people :person))
+  (series! :people :person)
+
+  (rec! :person-with-output
+        [:person-id
+         :given-name]
+        ::osc/identity-ids [:person-id]
+        ::osj/output-ids   [:family-name]))
