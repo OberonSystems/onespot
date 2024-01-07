@@ -78,14 +78,27 @@
 
 (deftest test-rec->gql-object
   (register-all!)
-  (is (= (osl/rec->object (osc/pull :person) :in)
+  (is (= (osl/rec->object (osc/rec :person) :in)
          '[:PersonIn
            {:fields
             {:personId   {:type (non-null Int)}
              :givenName  {:type (non-null String)}
              :familyName {:type (non-null String)}
              :shirtSize  {:type (non-null :ShirtSizeType)}
-             :isActive   {:type (non-null Boolean)}}}])))
+             :isActive   {:type (non-null Boolean)}}}]))
+
+  (is (= (osl/rec->object (osc/rec :person-with-output) :in)
+         '[:PersonWithOutputIn
+           {:fields
+            {:personId {:type (non-null Int)}
+             :givenName {:type (non-null String)}}}]))
+
+  (is (= (osl/rec->object (osc/rec :person-with-output) :out)
+         '[:PersonWithOutputOut
+           {:fields
+            {:personId {:type Int}
+             :givenName {:type String}
+             :familyName {:type String}}}])))
 
 (deftest test-enums
   (register-all!)

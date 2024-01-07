@@ -36,13 +36,15 @@
     (is (= (write-json :now {:now inst-obj}) [:now inst-str]))
     (is (= (read-json  :now {:now inst-str}) [:now inst-obj])))
 
-  (is (= (write-json :given-name {:given-name "my name is ..."}) [:the-given-name "my name is ..."]))
-  (is (= (write-json :active?    {:active? true})                [:is-active true]))
-  (is (= (write-json :enum       {:enum :test})                  [:enum "TEST"]))
+  (is (= (write-json :given-name   {:given-name "my name is ..."}) [:the-given-name "my name is ..."]))
+  (is (= (write-json :active?      {:active? true})                [:is-active true]))
+  (is (= (write-json :json-active? {:json-active? true})           [:json-is-active true]))
+  (is (= (write-json :enum         {:enum :test})                  [:enum "TEST"]))
 
-  (is (= (read-json :given-name {:the-given-name "my name is ..."}) [:given-name "my name is ..."]))
-  (is (= (read-json :active?    {:is-active true})                  [:active? true]))
-  (is (= (read-json :enum       {:enum "TEST"})                     [:enum :test])))
+  (is (= (read-json :given-name   {:the-given-name "my name is ..."}) [:given-name "my name is ..."]))
+  (is (= (read-json :active?      {:is-active true})                  [:active? true]))
+  (is (= (read-json :json-active? {:json-is-active true})             [:json-active? true]))
+  (is (= (read-json :enum         {:enum "TEST"})                     [:enum :test])))
 
 (deftest test-recs
   (register-all!)

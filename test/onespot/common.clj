@@ -63,6 +63,10 @@
          ::osl/gql-id  :is-active
          ::osj/json-id :is-active)
 
+  (attr! :json-active? :boolean
+         ::osl/gql-id  :is-active
+         ::osj/json-id :json-is-active)
+
   (attr! :shirt-size  :shirt-size-type)
   (attr! :enum :enum-type)
 
@@ -94,4 +98,4 @@
         [:person-id
          :given-name]
         ::osc/identity-ids [:person-id]
-        ::osj/output-ids   [:family-name]))
+        ::osl/output-ids   [:family-name]))

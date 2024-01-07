@@ -22,6 +22,18 @@
 
 ;;; --------------------------------------------------------------------------------
 
+(defn rec-output-ids
+  [entity-id]
+  (-> entity-id osc/rec ::output-ids))
+
+(defn rec-output-attrs
+  [entity-id]
+  (->> (rec-output-ids entity-id)
+       (map osc/attr)
+       seq))
+
+;;; --------------------------------------------------------------------------------
+
 (def +native-map+
   {:string  'String
    :boolean 'Boolean
@@ -299,7 +311,9 @@
   [{::osc/keys [entity-id] :as rec}
    in-out]
   [(clj-name->gql-type-name entity-id in-out)
-   {:fields   (->> (osc/rec-attrs rec)
+   {:fields   (->> (concat (osc/rec-attrs rec)
+                           (when (= in-out :out)
+                             (rec-output-attrs rec)))
                    (map (fn [attr]
                           (let [attr-entity (osc/attr-entity attr)]
                             [(clj-name->gql-name (or (::gql-id        attr)

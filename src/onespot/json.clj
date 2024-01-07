@@ -7,21 +7,9 @@
             ;;
             [oberon.utils :refer [map-entry]]
             ;;
-            [onespot.core :as osc])
+            [onespot.core    :as osc]
+            [onespot.lacinia :as osl])
   (:import [java.time Instant LocalDate]))
-
-
-;;; --------------------------------------------------------------------------------
-
-(defn rec-output-ids
-  [entity-id]
-  (-> entity-id osc/rec ::output-ids))
-
-(defn rec-output-attrs
-  [entity-id]
-  (->> (rec-output-ids entity-id)
-       (map osc/attr)
-       seq))
 
 ;;; --------------------------------------------------------------------------------
 ;;  Memoized as recommended by CSK project.
@@ -68,13 +56,14 @@
       ::osc/scalar value
       ;;
       ::osc/attr   (let [{::osc/keys [entity-id]
+                          ::osl/keys [gql-id]
                           ::keys [json-id]} entity]
-                     (map-entry (-> (or json-id entity-id))
+                     (map-entry (-> (or json-id gql-id entity-id))
                                 (entity->json (osc/attr-entity entity)
                                               (get value entity-id))))
       ;;
-      ::osc/rec    (->> (concat (osc/rec-attrs    entity)
-                                (rec-output-attrs entity))
+      ::osc/rec    (->> (concat (osc/rec-attrs        entity)
+                                (osl/rec-output-attrs entity))
                         (map #(entity->json % value))
                         (into {}))
 
