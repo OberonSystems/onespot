@@ -362,16 +362,16 @@
   (let [ret-types (return-types schema)
         args      (end-point-args schema)
         ;;
-        out-entity-ids (->> ret-types
-                            (map second)
-                            (map :entity-id)
-                            distinct
-                            osc/walk-entities)
-        in-entity-ids  (->> args
-                            (mapcat second)
-                            (map :entity-id)
-                            distinct
-                            osc/walk-entities)
+        out-entity-ids (osc/walk-entities (->> ret-types
+                                               (map second)
+                                               (map :entity-id)
+                                               distinct)
+                                          :get-attr-ids rec-output-ids)
+        in-entity-ids  (osc/walk-entities (->> args
+                                               (mapcat second)
+                                               (map :entity-id)
+                                               distinct)
+                                          :get-attr-ids rec-output-ids)
         ;;
         out-objects   (some->> out-entity-ids
                                (filter osc/rec?)
