@@ -203,6 +203,22 @@
      :message "Must be an instant"
      :value   x}))
 
+(defn date-range
+  [[start end & _ :as x]]
+  (let [message (cond
+                  (not (vector? x))     "A date-range must be a vector."
+                  (not (= (count x) 2)) "A date-range must be a vector with two elements."
+                  ;;
+                  (not (or (nil? start) (local-date? start))) (format "Start Date `%s` must be nil or a local-date.")
+                  (not (or (nil? end)   (local-date? end)))   (format "End Date `%s` must be nil or a local-date.")
+                  ;;
+                  (and start end (not (< start end)))
+                  "The Start Date must be less than the End Date.")]
+    (when message
+      {:code    :bad-value
+       :message message
+       :value   x})))
+
 ;;;
 
 (defn one-of
