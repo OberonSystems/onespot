@@ -12,6 +12,13 @@
   (:import [java.time Instant LocalDate]))
 
 ;;; --------------------------------------------------------------------------------
+
+(defonce ^:private tmp (atom nil))
+(defn-   ^:private set-tmp!
+  [value]
+  (swap! tmp (constantly value)))
+
+;;; --------------------------------------------------------------------------------
 ;;  Memoized as recommended by CSK project.
 
 (def ->camelCase
