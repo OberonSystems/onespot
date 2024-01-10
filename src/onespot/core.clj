@@ -329,33 +329,38 @@
   "Walks the entities and visits all referenced entities, returning a
   distinct set.
 
-  Avoids recursion by tracking previously visited entity-ids."
+  Avoids recursion by tracking previously visited entity-ids.
+
+  By default walks all ::attr-ids but call can pass a get-attr-ids
+  function to change the attr-ids to be walked.
+
+  For example the caller may choose to add an additional list of
+  attr-ids that they have added to the rec.  The Lacinia module does
+  this to include output-ids when generating the GQL Schema."
   [entity-id-queue & {:keys [get-attr-ids]}]
-  (let [get-attr-ids (or get-attr-ids
-                         (constantly nil))]
-   (loop [queue   (if (keyword? entity-id-queue)
-                    [entity-id-queue]
-                    entity-id-queue)
-          visited #{}]
-     (let [[entity-id & queue] queue]
-       (cond
-         (nil? entity-id) visited
-         ;;
-         (contains? visited entity-id)
-         (recur queue visited)
-         ;;
-         (scalar? entity-id)
-         (recur queue (conj visited entity-id))
-         ;;
-         (rec? entity-id)
-         (recur (into queue (concat (rec-attr-ids entity-id)
-                                    (get-attr-ids entity-id)))
-                (conj visited entity-id))
-         ;;
-         (series? entity-id)
-         (recur (conj queue (series-entity-id entity-id))
-                (conj visited entity-id))
-         ;;
-         (attr? entity-id)
-         (recur (conj queue (attr-entity-id entity-id))
-                (conj visited entity-id)))))))
+  (let [get-attr-ids (or get-attr-ids rec-attr-ids)]
+    (loop [queue   (if (keyword? entity-id-queue)
+                     [entity-id-queue]
+                     entity-id-queue)
+           visited #{}]
+      (let [[entity-id & queue] queue]
+        (cond
+          (nil? entity-id) visited
+          ;;
+          (contains? visited entity-id)
+          (recur queue visited)
+          ;;
+          (scalar? entity-id)
+          (recur queue (conj visited entity-id))
+          ;;
+          (rec? entity-id)
+          (recur (into queue (get-attr-ids entity-id))
+                 (conj visited entity-id))
+          ;;
+          (series? entity-id)
+          (recur (conj queue (series-entity-id entity-id))
+                 (conj visited entity-id))
+          ;;
+          (attr? entity-id)
+          (recur (conj queue (attr-entity-id entity-id))
+                 (conj visited entity-id)))))))
