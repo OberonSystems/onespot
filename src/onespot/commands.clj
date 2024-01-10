@@ -20,7 +20,7 @@
 
 (defmethod process-command :default
   [command]
-  (throw (ex-info "Don't know how to process command."
+  (throw (ex-info (format "Don't know how to process command: %s." (ch/command-type-dispatcher command))
                   {:command        command
                    :dispatch-value (ch/command-type-dispatcher command)})))
 

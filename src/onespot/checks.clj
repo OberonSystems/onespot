@@ -17,6 +17,6 @@
 
 (defmethod check-command :default
   [command]
-  (throw (ex-info "Don't know how to check command."
+  (throw (ex-info (format "Don't know how to check command: %s." (command-type-dispatcher command))
                   {:command        command
                    :dispatch-value (command-type-dispatcher command)})))
