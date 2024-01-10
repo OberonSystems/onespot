@@ -408,3 +408,36 @@
      :input-objects in-objects
      :queries       (->endpoints :queries)
      :mutations     (->endpoints :mutations)}))
+
+;;; --------------------------------------------------------------------------------
+
+(defn resolvable?
+  [x]
+  (and (map-entry? x)
+       (let [[k v] x]
+         (and (map? v)
+              (contains? v :resolve)))))
+
+(defn resolvable-parent-key
+  [resolvable]
+  (-> (meta resolvable)
+      ::parent-key))
+
+(defn with-parent-key
+  [[k resolvable]]
+  (with-meta resolvable
+    {::parent-key resolvable}))
+
+(defn wrap-resolvables
+  "Postwalks the schema applying `wrap-resolvable` to all map-entries
+  that have map `value` with a `resolve` key.
+
+  Replacing the map `value` with the return value of `wrap-resolvable`."
+  [schema wrap-resolvable]
+  (postwalk #(cond
+               (resolvable? %)
+               [(first %)
+                (-> % with-parent-key wrap-resolvable)]
+               ;;
+               :else %)
+            schema))
