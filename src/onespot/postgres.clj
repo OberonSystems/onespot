@@ -213,10 +213,6 @@
   [entity v]
   (make-array "TEXT" v))
 
-(defmethod entity->db :text-array
-  [entity v]
-  (make-array "TEXT" v))
-
 (defmethod entity->db :int-array
   [entity v]
   (make-array "INT" v))
