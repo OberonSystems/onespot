@@ -199,7 +199,11 @@
 ;;;
 
 (defmulti entity->db (fn [{::keys [kind] :as entity} v]
-                       (:type kind)))
+                       (or (:type kind) ::clj->db)))
+
+(defmethod entity->db ::clj->db
+  [entity v]
+  (clj->db v))
 
 (defmethod entity->db :enum
   [{::keys [kind] :as entity} v]
@@ -232,21 +236,6 @@
 
 ;;;
 
-(defn get-entity-with-kind
-  "When coercing to DB type, the info is first look for directly on the
-  entity and failing that attributes are treated specially, as the
-  entity that they point too might also have a ::kind specialisation."
-  [entity-id]
-  (cond
-    (-> (osc/pull entity-id) ::kind)
-    (osc/pull entity-id)
-    ;;
-    (and (osc/attr? entity-id)
-         (-> (osc/attr-entity entity-id) ::kind))
-    (osc/attr-entity entity-id)
-    ;;
-    :else nil))
-
 (defn record->row
   [record & {:keys [domain db-names?]}]
   (->> record
@@ -255,12 +244,17 @@
                 (cond
                   (nil? v) nil
                   ;;
-                  (osc/registered? entity-id)
+                  ;; If it's an attr then we use the attributes entity
+                  ;; to do the conversion.  Attributes are `named`
+                  ;; things that point to another type of entity so
+                  ;; they con't have any ::kind options themselves.
+                  (and (osc/registered? entity-id)
+                       (osc/attr?       entity-id))
                   [(or (and db-names? (get-name entity-id))
                        entity-id)
-                   (if-let [entity (get-entity-with-kind entity-id)]
-                     (entity->db entity v)
-                     (clj->db    v))]
+                   ;; If the attr-entity isn't specialised for ::kind
+                   ;; then the native coercion will be called.
+                   (entity->db (osc/attr-entity entity-id) v)]
                   ;;
                   :else [(or (and db-names? (as-db-name entity-id))
                              entity-id)
