@@ -54,11 +54,6 @@
   (when (osc/attr? entity-id)
     (-> (osc/attr entity-id) ::name)))
 
-(defn get-kind
-  [entity-id]
-  (when (osc/attr? entity-id)
-    (-> (osc/attr-entity entity-id) ::kind)))
-
 ;;; --------------------------------------------------------------------------------
 
 (def ^:dynamic *datasource*)
@@ -203,39 +198,54 @@
 
 ;;;
 
-(defmulti entity->db (fn [kind v]
+(defmulti entity->db (fn [{::keys [kind] :as entity} v]
                        (:type kind)))
 
 (defmethod entity->db :enum
-  [{:keys [enum-type]} v]
-  (make-enum enum-type v))
+  [{::keys [kind] :as entity} v]
+  (make-enum (:db-type kind) v))
 
 (defmethod entity->db :text-array
-  [kind v]
+  [entity v]
   (make-array "TEXT" v))
 
 (defmethod entity->db :text-array
-  [kind v]
+  [entity v]
   (make-array "TEXT" v))
 
 (defmethod entity->db :int-array
-  [kind v]
+  [entity v]
   (make-array "INT" v))
 
 (defmethod entity->db :date-array
-  [kind v]
+  [entity v]
   (make-array "DATE" (map clj->db v)))
 
 (defmethod entity->db :date-range
-  [kind v]
+  [entity v]
   (make-daterange v))
 
 (defmethod entity->db :instant-array
-  [kind v]
+  [entity v]
   ;; FIXME:: Should these be TIMESTAMPS?
   (make-array "TIMESTAMPTZ" (map clj->db v)))
 
 ;;;
+
+(defn get-entity-with-kind
+  "When coercing to DB type, the info is first look for directly on the
+  entity and failing that attributes are treated specially, as the
+  entity that they point too might also have a ::kind specialisation."
+  [entity-id]
+  (cond
+    (-> (osc/pull entity-id) ::kind)
+    (osc/pull entity-id)
+    ;;
+    (and (osc/attr? entity-id)
+         (-> (osc/attr-entity entity-id) ::kind))
+    (osc/attr-entity entity-id)
+    ;;
+    :else nil))
 
 (defn record->row
   [record & {:keys [domain db-names?]}]
@@ -248,8 +258,8 @@
                   (osc/registered? entity-id)
                   [(or (and db-names? (get-name entity-id))
                        entity-id)
-                   (if-let [db-kind (get-kind entity-id)]
-                     (entity->db db-kind v)
+                   (if-let [entity (get-entity-with-kind entity-id)]
+                     (entity->db entity v)
                      (clj->db    v))]
                   ;;
                   :else [(or (and db-names? (as-db-name entity-id))
