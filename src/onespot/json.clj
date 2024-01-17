@@ -43,15 +43,10 @@
 
 ;;; --------------------------------------------------------------------------------
 
-(defn kind
-  [entity]
-  (::kind entity))
-
-;;;
-
 (defn- kind-dispatcher
   [entity value]
-  (or (kind entity) (osc/entity-id entity)))
+  (or (-> entity ::kind :type)
+      (osc/entity-id entity)))
 
 (defmulti entity->json kind-dispatcher)
 
@@ -90,9 +85,7 @@
   [entity value]
   (some-> value .toString))
 
-;;; Specialised to this module
-
-(defmethod entity->json ::enum
+(defmethod entity->json :enum
   [entity value]
   (some-> value name ->SCREAMING_SNAKE_CASE_STRING))
 
@@ -137,9 +130,7 @@
   [entity value]
   (some-> value Instant/parse))
 
-;;; Specialised to this module
-
-(defmethod json->entity ::enum
+(defmethod json->entity :enum
   [entity value]
   (some-> value ->kebab-case-keyword))
 
