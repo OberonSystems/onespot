@@ -27,9 +27,17 @@
           :gql-type  '(non-null String)
           :many?     false}))
 
+  (is (= (osl/return-type->field-ref (osl/optional :string))
+         {:entity-id :string :gql-type 'String :many? false}))
+
   (is (= (osl/return-type->field-ref [:string])
          {:entity-id :string
           :gql-type  '(non-null (list (non-null String)))
+          :many?     true}))
+
+  (is (= (osl/return-type->field-ref (osl/optional [:string]))
+         {:entity-id :string
+          :gql-type  '(list (non-null String))
           :many?     true}))
 
   (is (= (osl/return-type->field-ref :person)
@@ -38,7 +46,7 @@
           :many?     false}))
 
   (is (= (osl/return-type->field-ref :people)
-         {:entity-id :people
+         {:entity-id :person
           :gql-type '(non-null (list (non-null :PersonOut)))
           :many? true})))
 
@@ -98,7 +106,19 @@
            {:fields
             {:personId {:type Int}
              :givenName {:type String}
-             :familyName {:type String}}}])))
+             :familyName {:type String}}}]))
+
+  (is (= (osl/rec->object (osc/rec :person-with-core-description) :out)
+         '[:PersonWithCoreDescriptionOut
+           {:fields {:personId  {:type Int}
+                     :givenName {:type String}}
+            :description "Core Description"}]))
+
+  (is (= (osl/rec->object (osc/rec :person-with-lacinia-description) :out)
+         '[:PersonWithLaciniaDescriptionOut
+           {:fields {:personId  {:type Int}
+                     :givenName {:type String}}
+            :description "Lacinia Description"}])))
 
 (deftest test-enums
   (register-all!)

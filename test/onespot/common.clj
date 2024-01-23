@@ -98,4 +98,15 @@
         [:person-id
          :given-name]
         ::osc/identity-ids [:person-id]
-        ::osl/output-ids   [:family-name]))
+        ::osl/output-ids   [:family-name])
+
+  (rec! :person-with-core-description
+        [:person-id :given-name]
+        ::osc/identity-ids [:person-id]
+        ::osc/description "Core Description")
+
+  (rec! :person-with-lacinia-description
+        [:person-id :given-name]
+        ::osc/identity-ids [:person-id]
+        ::osc/description "Core Description"
+        ::osl/description "Lacinia Description"))

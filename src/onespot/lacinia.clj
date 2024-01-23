@@ -207,20 +207,58 @@
 
 ;;; --------------------------------------------------------------------------------
 
+(defn optional
+  [entity-id]
+  {:type entity-id
+   :optional? true})
+
+(defn canonicalise-return-type
+  [return-type]
+  (let [{:keys [entity-id many?] :as record}
+        (cond
+          (keyword? return-type)
+          (if (and (osc/registered? return-type)
+                   (osc/series?     return-type))
+            {:entity-id (osc/series-entity-id return-type)
+             :many?     true
+             :optional? false}
+            {:entity-id return-type
+             :many?     false
+             :optional? false})
+          ;;
+          (and (vector? return-type)
+               (-> return-type first keyword?))
+          {:entity-id (first return-type)
+           :many?     true
+           :optional? false}
+          ;;
+          (and (map? return-type)
+               (or (-> return-type :type keyword?)
+                   (-> return-type :type vector?)))
+          (let [{:keys [type optional?]} return-type]
+            (assoc (canonicalise-return-type type)
+                   :optional? (or optional? false)))
+          ;;
+          :else (throw (ex-info (format "Cannot canonicalise return-type: %s." return-type)
+                                {:return-type return-type})))]
+    (when (and (osc/registered? entity-id)
+               (osc/series?     entity-id)
+               many?)
+      ;; FIXME: Decide if we should ever support this?
+      (throw (ex-info "Sorry, not yet handling lists of `series` entities."
+                      {:return-type return-type})))
+    record))
+
 (defn return-type->field-ref
   [return-type]
-  (let [entity-id (if (vector? return-type)
-                    (first return-type)
-                    return-type)
-        many?     (or (vector?     return-type)
-                      (osc/series? return-type))]
+  (let [{:keys [entity-id many? optional?]} (canonicalise-return-type return-type)]
     (cond
       (osc/scalar? entity-id)
       (let [entity (osc/scalar entity-id)]
         {:entity-id entity-id
          :gql-type  (->gql-type (or (::gql-type entity)
                                     entity-id)
-                                :out many? false)
+                                :out many? optional?)
          :many?     many?})
       ;;
       (osc/rec? entity-id)
@@ -228,27 +266,12 @@
         {:entity-id entity-id
          :gql-type  (->gql-type (or (::gql-type entity)
                                     entity-id)
-                                :out many? false)
+                                :out many? optional?)
          :many?    many?})
-      ;;
-      (osc/series? entity-id)
-      (let [entity        (osc/series entity-id)
-            series-entity (osc/series-entity entity)]
-        ;; FIXME: How do we handle it if the they are returing `many`
-        ;; `serieses`?
-        (if (vector? return-type)
-          (throw (ex-info "Sorry, not yet handling returning a list of `series`."
-                          {:return-type return-type})))
-        ;;
-        {:entity-id entity-id
-         :gql-type  (->gql-type (or (::gql-type      series-entity)
-                                    (::osc/entity-id series-entity))
-                                :out true false)
-         :many?     true})
       ;;
       (native? entity-id)
       {:entity-id entity-id
-       :gql-type  (->gql-type entity-id :out many? false)
+       :gql-type  (->gql-type entity-id :out many? optional?)
        :many?     many?}
       ;;
       :else (throw (ex-info (format "Can't convert return-type `%s` to a field-ref." return-type)
