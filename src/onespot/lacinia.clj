@@ -308,24 +308,26 @@
                           {:entity-id entity-id}))))
 
 (defn rec->object
-  [{::osc/keys [entity-id] :as rec}
+  [{::osc/keys [entity-id description] :as rec}
    in-out]
   [(clj-name->gql-type-name entity-id in-out)
-   {:fields   (->> (concat (osc/rec-attrs rec)
-                           (when (= in-out :out)
-                             (rec-output-attrs rec)))
-                   (map (fn [attr]
-                          (let [attr-entity (osc/attr-entity attr)]
-                            [(clj-name->gql-name (or (::gql-id        attr)
-                                                     (::osc/entity-id attr)))
-                             (entity->field-ref attr-entity
-                                                in-out
-                                                (case in-out
-                                                  :in  (osc/optional? rec attr)
-                                                  ;; For out objects we leave it up to the caller to
-                                                  ;; decide what they want to grab.
-                                                  :out true))])))
-                   (into {}))}])
+   (hash-map* {:fields   (->> (concat (osc/rec-attrs rec)
+                                      (when (= in-out :out)
+                                        (rec-output-attrs rec)))
+                              (map (fn [attr]
+                                     (let [attr-entity (osc/attr-entity attr)]
+                                       [(clj-name->gql-name (or (::gql-id        attr)
+                                                                (::osc/entity-id attr)))
+                                        (entity->field-ref attr-entity
+                                                           in-out
+                                                           (case in-out
+                                                             :in  (osc/optional? rec attr)
+                                                             ;; For out objects we leave it up to the caller to
+                                                             ;; decide what they want to grab.
+                                                             :out true))])))
+                              (into {}))}
+              :description (or (::description rec)
+                               description))])
 
 ;;; --------------------------------------------------------------------------------
 
