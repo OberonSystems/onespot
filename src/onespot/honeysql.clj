@@ -29,8 +29,8 @@
   [v]
   ;; FIXME: workout how to replace this with an extention to honeysql
   ;; so we can just use [:ilike% :field "value"] and it'll stick the
-  ;; % in.
-  (str "%" v "%"))
+  ;; `%` in.
+  (when v (str "%" v "%")))
 
 ;;; --------------------------------------------------------------------------------
 
