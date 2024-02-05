@@ -36,42 +36,36 @@
     (scalar! :contact-type-enum #(one-of % contact-types)
              ::osc/enums contact-types))
 
-  (scalar! :positive-integer positive-integer ::osl/gql-type :int)
-  (scalar! :string           non-blank-string)
-  (scalar! :boolean          true-or-false)
-  (scalar! :enum-type        global-keyword ::osj/kind ::osj/enum)
-  (scalar! :shirt-size-type  validate-shirt-size
-           ::osc/enums +shirt-size-enums+
-           ::osj/kind  ::osj/enum))
+  (scalar! :shirt-size-type validate-shirt-size
+           ::osc/enums +shirt-size-enums+))
 
 (defn register-attrs!
   []
   (register-scalars!)
-  (attr! :person-id   :positive-integer)
-  (attr! :given-name  :string ::osj/json-id :the-given-name)
-  (attr! :nickname    :string)
-  (attr! :family-name :string
+  (attr! :person-id   ::osc/positive-integer)
+  (attr! :given-name  ::osc/string ::osj/entity-id :the-given-name)
+  (attr! :nickname    ::osc/string)
+  (attr! :family-name ::osc/string
          ::osc/label "The Family Name")
   ;;
-  (attr! :day :local-date)
-  (attr! :now :instant)
+  (attr! :day ::osc/local-date)
+  (attr! :now ::osc/instant)
   ;;
   (attr! :contact-type  :contact-type-enum)
-  (attr! :contact-value :string1)
+  (attr! :contact-value ::osc/string)
 
-  (attr! :active?      :boolean
-         ::osl/gql-id  :is-active
-         ::osj/json-id :is-active)
+  (attr! :active?        ::osc/boolean
+         ::osl/entity-id :is-active
+         ::osj/entity-id :is-active)
 
-  (attr! :json-active? :boolean
-         ::osl/gql-id  :is-active
-         ::osj/json-id :json-is-active)
+  (attr! :json-active?   ::osc/boolean
+         ::osl/entity-id :is-active
+         ::osj/entity-id :json-is-active)
 
-  (attr! :shirt-size  :shirt-size-type)
-  (attr! :enum :enum-type)
+  (attr! :shirt-size :shirt-size-type)
 
-  (series! :enum-types :enum-type)
-  (attr! :enums :enum-types))
+  (series! :s/shirt-sizes :shirt-size-type)
+  (attr! :shirt-sizes :s/shirt-sizes))
 
 (defn register-all!
   []

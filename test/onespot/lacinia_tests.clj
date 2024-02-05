@@ -8,27 +8,21 @@
             [onespot.common :refer :all]
             :reload))
 
-(defn fetch-people
-  [])
-
-(defn fetch-person
-  [])
-
-(defn dummy-fn
-  [])
-
 ;;; --------------------------------------------------------------------------------
 
 (deftest test-return-types
   (register-all!)
 
+  ;; Native GQL String types
   (is (= (osl/return-type->field-ref :string)
          {:entity-id :string
           :gql-type  '(non-null String)
           :many?     false}))
 
   (is (= (osl/return-type->field-ref (osl/optional :string))
-         {:entity-id :string :gql-type 'String :many? false}))
+         {:entity-id :string
+          :gql-type  'String
+          :many?     false}))
 
   (is (= (osl/return-type->field-ref [:string])
          {:entity-id :string
@@ -54,7 +48,7 @@
   (register-all!)
   (is (= (osl/arg->field-ref :person-id nil)
          {:entity-id      :person-id
-          :attr-entity-id :positive-integer
+          :attr-entity-id ::osc/positive-integer
           :clj-arg-id     :person-id
           :gql-arg-id     :personId
           :gql-type       '(non-null Int)}))
@@ -69,10 +63,10 @@
 
 (deftest test-entity->field-ref
   (register-all!)
-  (is (= (osl/entity->field-ref :string :in false)
+  (is (= (osl/entity->field-ref ::osc/string :in false)
          {:type '(non-null String)}))
 
-  (is (= (osl/entity->field-ref :string :in true)
+  (is (= (osl/entity->field-ref ::osc/string :in true)
          {:type 'String}))
 
   (is (= (osl/entity->field-ref :person :in false)
@@ -150,7 +144,7 @@
 
     (is (= (osl/end-point-args schema)
            {:fetch-person  [{:entity-id      :person-id
-                             :attr-entity-id :positive-integer
+                             :attr-entity-id ::osc/positive-integer
                              :clj-arg-id     :person-id
                              :gql-arg-id     :personId
                              :gql-type       '(non-null Int)}]

@@ -218,11 +218,11 @@
 (deftest test-walking-recs
   (register-all!)
   (is (= (walk-entities :given-name)
-         #{:given-name :string}))
+         #{:given-name ::osc/string}))
 
   (is (= (walk-entities :person)
-         #{:active? :positive-integer :person :person-id :given-name :string
-           :shirt-size-type :shirt-size :family-name :boolean}))
+         #{:active? ::osc/positive-integer :person :person-id :given-name ::osc/string
+           :shirt-size-type :shirt-size :family-name ::osc/boolean}))
 
   ;; Should be the same as :person is contained in :people so it's a
   ;; referenced type and should be included either way.
