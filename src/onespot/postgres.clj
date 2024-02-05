@@ -83,11 +83,16 @@
 ;;  FIXME:: Move all of this into the oberon coerce library.
 
 (def +yyyy-mm-dd+ (DateTimeFormatter/ofPattern "yyyy-MM-dd"))
+(def +yyyy-mm+    (DateTimeFormatter/ofPattern "yyyy-MM"))
 (def +yyyymmdd+   (DateTimeFormatter/ofPattern "yyyyMMdd"))
 
 (defn ld->yyyy-mm-dd
   [^LocalDate ld]
   (.format ld +yyyy-mm-dd+))
+
+(defn ld->yyyy-mm
+  [ld]
+  (.format ld +yyyy-mm+))
 
 (defn yyyy-mm-dd->ld
   [s]
