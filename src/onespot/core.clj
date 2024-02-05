@@ -69,8 +69,6 @@
   [entity-id]
   (kind? entity-id ::series))
 
-;;;
-
 (defn attr?
   [entity-id]
   (kind? entity-id ::attr))
