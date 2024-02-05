@@ -22,6 +22,10 @@
 
 ;;; --------------------------------------------------------------------------------
 
+(defn entity-id
+  [entity-id]
+  (-> entity-id osc/canonical-entity-id osc/pull ::entity-id))
+
 (defn rec-output-ids
   [entity-id]
   (-> entity-id osc/rec ::output-ids))
@@ -141,7 +145,7 @@
         {:entity-id  entity-id
          :clj-arg-id arg-id
          :gql-arg-id (-> (or (when info-type? arg-id)
-                             (entity ::gql-id)
+                             (entity ::entity-id)
                              arg-id)
                          ->camelCaseKeyword)
          :gql-type   (->gql-type (or (entity ::gql-type)
@@ -158,7 +162,7 @@
          ;;
          :clj-arg-id  arg-id
          :gql-arg-id  (-> (or (when info-type? arg-id)
-                              (entity ::gql-id)
+                              (entity ::entity-id)
                               arg-id)
                           ->camelCaseKeyword)
          :gql-type    (->gql-type (or (series-entity ::gql-type)
@@ -175,7 +179,7 @@
          ;;
          :clj-arg-id  arg-id
          :gql-arg-id  (-> (or (when info-type? arg-id)
-                              (entity ::gql-id)
+                              (entity ::entity-id)
                               arg-id)
                           ->camelCaseKeyword)
          :gql-type    (->gql-type (or (attr-entity ::gql-type)
@@ -253,6 +257,11 @@
   [return-type]
   (let [{:keys [entity-id many? optional?]} (canonicalise-return-type return-type)]
     (cond
+      (native? entity-id)
+      {:entity-id entity-id
+       :gql-type  (->gql-type entity-id :out many? optional?)
+       :many?     many?}
+      ;;
       (osc/scalar? entity-id)
       (let [entity (osc/scalar entity-id)]
         {:entity-id entity-id
@@ -268,11 +277,6 @@
                                     entity-id)
                                 :out many? optional?)
          :many?    many?})
-      ;;
-      (native? entity-id)
-      {:entity-id entity-id
-       :gql-type  (->gql-type entity-id :out many? optional?)
-       :many?     many?}
       ;;
       :else (throw (ex-info (format "Can't convert return-type `%s` to a field-ref." return-type)
                             {:return-type return-type})))))
@@ -339,7 +343,7 @@
                                         (rec-output-attrs rec)))
                               (map (fn [attr]
                                      (let [attr-entity (osc/attr-entity attr)]
-                                       [(clj-name->gql-name (or (::gql-id        attr)
+                                       [(clj-name->gql-name (or (::entity-id     attr)
                                                                 (::osc/entity-id attr)))
                                         (entity->field-ref attr-entity
                                                            in-out
@@ -355,9 +359,11 @@
 ;;; --------------------------------------------------------------------------------
 
 (defn scalar->enum
-  [{::osc/keys [entity-id enums]
-    ::keys [gql-id description] :as entity}]
-  [(clj-name->gql-type-name (or gql-id entity-id) nil)
+  [{::osc/keys [enums]
+    ::keys [entity-id description] :as entity}]
+  [(clj-name->gql-type-name (or entity-id
+                                (osc/entity-id entity))
+                            nil)
    (merge {:values (->> enums
                         (mapv (fn [enum]
                                 (cond
