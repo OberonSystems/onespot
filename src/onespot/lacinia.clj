@@ -399,11 +399,13 @@
         out-entity-ids (osc/walk-entities (->> ret-types
                                                (map second)
                                                (map :entity-id)
+                                               (filter osc/registered?)
                                                distinct)
                                           :get-attr-ids get-attr-ids)
         in-entity-ids  (osc/walk-entities (->> args
                                                (mapcat second)
                                                (map :entity-id)
+                                               (filter osc/registered?)
                                                distinct)
                                           :get-attr-ids get-attr-ids)
         ;;
