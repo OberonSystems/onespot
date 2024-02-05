@@ -43,16 +43,15 @@
 ;;; --------------------------------------------------------------------------------
 ;;  Onespot layer
 
+(defn entity-id
+  [entity-id]
+  (-> entity-id osc/canonical-entity-id osc/pull ::entity-id))
+
 (defn get-table
   [entity-id]
-  (or (-> (osc/rec entity-id) ::table)
+  (or (-> (osc/rec entity-id) ::info ::table)
       (throw (ex-info (format "Failed to get DB Table for %s" entity-id)
                       {:entity-id entity-id}))))
-
-(defn get-name
-  [entity-id]
-  (when (osc/attr? entity-id)
-    (-> (osc/attr entity-id) ::name)))
 
 ;;; --------------------------------------------------------------------------------
 
@@ -203,63 +202,85 @@
 
 ;;;
 
-(defmulti entity->db (fn [{::keys [kind] :as entity} v]
-                       (or (:type kind) ::clj->db)))
+(defmulti entity->db (fn [{::keys [info] :as entity} v]
+                       (or (::type info) ::clj->db)))
 
 (defmethod entity->db ::clj->db
   [entity v]
   (clj->db v))
 
-(defmethod entity->db :enum
-  [{::keys [kind] :as entity} v]
-  (make-enum (:db-type kind) v))
+(defmethod entity->db ::enum
+  [{{::keys [enum-type]} ::info
+    ::keys [entity-id] :as entity} v]
+  (make-enum (or enum-type
+                 entity-id
+                 (osc/entity-id entity))
+             v))
 
-(defmethod entity->db :text-array
+(defmethod entity->db ::text-array
   [entity v]
   (make-array "TEXT" v))
 
-(defmethod entity->db :int-array
+(defmethod entity->db ::int-array
   [entity v]
   (make-array "INT" v))
 
-(defmethod entity->db :date-array
+(defmethod entity->db ::date-array
   [entity v]
   (make-array "DATE" (map clj->db v)))
 
-(defmethod entity->db :date-range
+(defmethod entity->db ::date-range
   [entity v]
   (make-daterange v))
 
-(defmethod entity->db :instant-array
+(defmethod entity->db ::instant-array
   [entity v]
   ;; FIXME:: Should these be TIMESTAMPS?
   (make-array "TIMESTAMPTZ" (map clj->db v)))
+
+
+;;;
+
+(defmulti db->entity (fn [{::keys [info] :as entity} v]
+                       (::type info)))
+
+(defmethod db->entity :default
+  [entity v]
+  v)
+
+(defmethod db->entity ::text-array
+  [entity v]
+  (some-> v .getArray))
 
 ;;;
 
 (defn record->row
   [record & {:keys [domain db-names?]}]
   (->> record
-       (map (fn [[entity-id v]]
-              (when-not (nil? v)
-                (cond
-                  (nil? v) nil
-                  ;;
-                  ;; If it's an attr then we use the attributes entity
-                  ;; to do the conversion.  Attributes are `named`
-                  ;; things that point to another type of entity so
-                  ;; they con't have any ::kind options themselves.
-                  (and (osc/registered? entity-id)
-                       (osc/attr?       entity-id))
-                  [(or (and db-names? (get-name entity-id))
-                       entity-id)
+       (map (fn [[k v]]
+              (cond
+                (nil? v) nil
+                ;;
+                ;; If it's an attr then we use the attr's entity to do
+                ;; the conversion.  Attrs are `named` things that
+                ;; point to another type of entity so they don't have
+                ;; any ::info options themselves.
+                (and (osc/registered? k)
+                     (osc/attr?       k))
+                (let [entity        (osc/attr k)
+                      entity-id     (::entity-id     entity)
+                      osc-entity-id (::osc/entity-id entity)]
+                  [(if db-names?
+                     (-> (or entity-id osc-entity-id) as-db-name)
+                     osc-entity-id)
                    ;; If the attr-entity isn't specialised for ::kind
                    ;; then the native coercion will be called.
-                   (entity->db (osc/attr-entity entity-id) v)]
-                  ;;
-                  :else [(or (and db-names? (as-db-name entity-id))
-                             entity-id)
-                         (clj->db v)]))))
+                   (entity->db (osc/attr-entity osc-entity-id) v)])
+                ;;
+                :else [(if db-names?
+                         (as-db-name k)
+                         k)
+                       (clj->db v)])))
        (into {})))
 
 ;;; --------------------------------------------------------------------------------
