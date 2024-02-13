@@ -1,7 +1,8 @@
 (ns onespot.entities
   (:require [onespot.core       :as osc]
             [onespot.validators :as osv]
-            [onespot.lacinia    :as osl]))
+            [onespot.lacinia    :as osl]
+            [onespot.postgres   :as opg]))
 
 (defn register-common!
   []
@@ -9,7 +10,8 @@
                ::osl/gql-type :boolean)
 
   (osc/scalar! ::osc/keyword  osv/global-keyword
-               ::osl/gql-type :string)
+               ::osl/gql-type :string
+               ::opg/info     #::opg{:type ::opg/keyword})
 
   (osc/scalar! ::osc/local-date osv/local-date
                ::osl/gql-type   :string)

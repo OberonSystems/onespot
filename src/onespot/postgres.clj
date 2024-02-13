@@ -13,6 +13,8 @@
             [camel-snake-kebab.core :as csk]
             [camel-snake-kebab.extras :as cske]
             ;;
+            [coerce.core :refer [coerce]]
+            ;;
             [oberon.utils :refer [dump-> dump->>]]
             [onespot.core :as osc])
   (:import [java.sql
@@ -209,6 +211,10 @@
   [entity v]
   (clj->db v))
 
+(defmethod entity->db ::keyword
+  [entity v]
+  (name v))
+
 (defmethod entity->db ::enum
   [{{::keys [enum-type]} ::info
     ::keys [entity-id] :as entity} v]
@@ -237,20 +243,6 @@
   [entity v]
   ;; FIXME:: Should these be TIMESTAMPS?
   (make-array "TIMESTAMPTZ" (map clj->db v)))
-
-
-;;;
-
-(defmulti db->entity (fn [{::keys [info] :as entity} v]
-                       (::type info)))
-
-(defmethod db->entity :default
-  [entity v]
-  v)
-
-(defmethod db->entity ::text-array
-  [entity v]
-  (some-> v .getArray))
 
 ;;;
 
@@ -281,6 +273,60 @@
                          (as-db-name k)
                          k)
                        (clj->db v)])))
+       (into {})))
+
+;;; --------------------------------------------------------------------------------
+
+(defmulti db->entity (fn [{::keys [info] :as entity} v]
+                       (::type info)))
+
+(defmethod db->entity :default
+  [entity v]
+  v)
+
+(defmethod db->entity ::keyword
+  [entity v]
+  (keyword v))
+
+(defmethod db->entity ::enum
+  [entity v]
+  (keyword v))
+
+(defmethod db->entity ::array
+  [entity v]
+  (some-> v .getArray))
+
+(defmethod db->entity ::keyword-array
+  [entity v]
+  (some->> v
+           .getArray
+           (map #(coerce % :keyword))))
+
+(defn row->record
+  [attr-map row]
+  (->> row
+       (map (fn [[k v]]
+              (let [entity-id (get attr-map k k)]
+                (cond
+                  (not (osc/registered? entity-id)) [k v]
+                  ;;
+                  (osc/attr? entity-id) (let [attr        (osc/attr entity-id)
+                                              attr-entity (osc/attr-entity attr)]
+                                          [entity-id (db->entity attr-entity v)])
+                  :else [entity-id (db->entity (osc/pull entity-id) v)]))))
+       (into {})))
+
+(defn make-row->record-attr-map
+  "When the entity has a different entity-id in the `postgres` world we
+  map it to the onespot entity-id so that we can correctly do the
+  translations and coercions later on."
+  []
+  (->> (osc/attrs)
+       (map (fn [attr]
+              (let [entity-id     (entity-id attr)
+                    osc-entity-id (osc/entity-id attr)]
+                (when-not (= entity-id osc-entity-id)
+                  [entity-id osc-entity-id]))))
        (into {})))
 
 ;;; --------------------------------------------------------------------------------
