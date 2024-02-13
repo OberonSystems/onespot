@@ -96,8 +96,7 @@
 
 (defn fetch-all
   [sql debug?]
-  (-> (execute-sql sql debug?)
-      doall))
+  (execute-sql sql debug?))
 
 (defn one
   [kind matching & {:keys [throw?] :as opts}]
