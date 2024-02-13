@@ -95,6 +95,14 @@
                        {:entity-id entity-id :kind kind :expected-kind expected-kind})))
      result)))
 
+;;;
+
+(defn attrs
+  []
+  (->> @+registry+
+       (filter #(-> % first attr?))
+       (map second)))
+
 ;;; --------------------------------------------------------------------------------
 
 (defn canonical-entity-id
