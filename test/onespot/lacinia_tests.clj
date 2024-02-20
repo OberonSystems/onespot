@@ -98,20 +98,27 @@
   (is (= (osl/rec->object (osc/rec :person-with-output) :out)
          '[:PersonWithOutputOut
            {:fields
-            {:personId {:type Int}
-             :givenName {:type String}
-             :familyName {:type String}}}]))
+            {:personId   {:type (non-null Int)}
+             :givenName  {:type (non-null String)}
+             :familyName {:type (non-null String)}}}]))
+
+  (is (= (osl/rec->object (osc/rec :person-with-optional-fields) :out)
+         '[:PersonWithOptionalFieldsOut
+           {:fields
+            {:personId   {:type (non-null Int)}
+             :givenName  {:type String}
+             :familyName {:type (non-null String)}}}]))
 
   (is (= (osl/rec->object (osc/rec :person-with-core-description) :out)
          '[:PersonWithCoreDescriptionOut
-           {:fields {:personId  {:type Int}
-                     :givenName {:type String}}
+           {:fields {:personId  {:type (non-null Int)}
+                     :givenName {:type (non-null String)}}
             :description "Core Description"}]))
 
   (is (= (osl/rec->object (osc/rec :person-with-lacinia-description) :out)
          '[:PersonWithLaciniaDescriptionOut
-           {:fields {:personId  {:type Int}
-                     :givenName {:type String}}
+           {:fields {:personId  {:type (non-null Int)}
+                     :givenName {:type (non-null String)}}
             :description "Lacinia Description"}])))
 
 (deftest test-enums

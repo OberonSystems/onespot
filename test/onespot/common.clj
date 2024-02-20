@@ -94,6 +94,11 @@
         ::osc/identity-ids [:person-id]
         ::osl/output-ids   [:family-name])
 
+  (rec! :person-with-optional-fields
+        [:person-id :given-name :family-name]
+        ::osc/identity-ids [:person-id]
+        ::osc/optional-ids [:given-name])
+
   (rec! :person-with-core-description
         [:person-id :given-name]
         ::osc/identity-ids [:person-id]
