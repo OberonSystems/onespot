@@ -13,8 +13,6 @@
             [camel-snake-kebab.core :as csk]
             [camel-snake-kebab.extras :as cske]
             ;;
-            [coerce.core :refer [coerce]]
-            ;;
             [oberon.utils :refer [dump-> dump->>]]
             [onespot.core :as osc])
   (:import [java.sql
@@ -300,7 +298,7 @@
   [entity v]
   (some->> v
            .getArray
-           (map #(coerce % :keyword))))
+           (map keyword)))
 
 (defn row->record
   [attr-map row]
