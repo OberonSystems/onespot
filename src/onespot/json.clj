@@ -51,16 +51,13 @@
     (case (osc/kind entity)
       ::osc/scalar value
       ;;
-      ::osc/attr   (let [{::keys [entity-id]} entity
-                         osl-entity-id        (osl/entity-id entity)
-                         osc-entity-id        (osc/entity-id entity)]
-                     (map-entry (-> (or entity-id osl-entity-id osc-entity-id))
-                                (entity->json (osc/attr-entity entity)
-                                              (get value osc-entity-id))))
+      ::osc/attr   (entity->json (osc/attr-entity entity) value)
       ;;
       ::osc/rec    (->> (concat (osc/rec-attrs        entity)
                                 (osl/rec-output-attrs entity))
-                        (map #(entity->json % value))
+                        (map (fn [attr]
+                               (let [entity-id (osc/entity-id attr)]
+                                 [entity-id (entity->json attr (get value entity-id))])))
                         (into {}))
 
       ::osc/series (let [series-entity (osc/series-entity entity)]
@@ -93,17 +90,12 @@
     (case (osc/kind entity)
       ::osc/scalar value
       ;;
-      ::osc/attr   (let [{::keys [entity-id]} entity
-                         osl-entity-id        (osl/entity-id entity)
-                         osc-entity-id        (osc/entity-id entity)]
-                     (map-entry osc-entity-id
-                                (json->entity (osc/attr-entity entity)
-                                              (get value (or entity-id
-                                                             osl-entity-id
-                                                             osc-entity-id)))))
+      ::osc/attr   (json->entity (osc/attr-entity entity) value)
       ;;
       ::osc/rec    (->> (osc/rec-attrs entity)
-                        (map #(json->entity % value))
+                        (map (fn [attr]
+                               (let [entity-id (osc/entity-id attr)]
+                                 [entity-id (json->entity attr (get value entity-id))])))
                         (into {}))
       ;;
       ::osc/series (let [series-entity (osc/series-entity entity)]
