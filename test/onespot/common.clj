@@ -43,7 +43,7 @@
   []
   (register-scalars!)
   (attr! :person-id   ::osc/positive-integer)
-  (attr! :given-name  ::osc/string ::osj/entity-id :the-given-name)
+  (attr! :given-name  ::osc/string ::osj/entity-id :theGivenName)
   (attr! :nickname    ::osc/string)
   (attr! :family-name ::osc/string
          ::osc/label "The Family Name")
@@ -55,12 +55,8 @@
   (attr! :contact-value ::osc/string)
 
   (attr! :active?        ::osc/boolean
-         ::osl/entity-id :is-active
-         ::osj/entity-id :is-active)
-
-  (attr! :json-active?   ::osc/boolean
-         ::osl/entity-id :is-active
-         ::osj/entity-id :json-is-active)
+         ::osl/entity-id :isActive
+         ::osj/entity-id :isActive)
 
   (attr! :shirt-size :shirt-size-type)
 

@@ -38,3 +38,10 @@
                          (-> (or (get rename-map k) k)
                              ->kebab-case-keyword))
                        m))
+
+(defn keys->camel-case
+  [m & {:keys [rename-map]}]
+  (cske/transform-keys (fn [k]
+                         (-> (or (get rename-map k) k)
+                             ->camelCaseKeyword))
+                       m))

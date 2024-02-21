@@ -7,7 +7,8 @@
             ;;
             [oberon.utils :refer [map-entry]]
             ;;
-            [onespot.snakes  :refer [->SCREAMING_SNAKE_CASE_STRING ->kebab-case-keyword ->kebab-case-string keys->kebab-case]]
+            [onespot.snakes  :refer [->SCREAMING_SNAKE_CASE_STRING ->kebab-case-keyword ->kebab-case-string
+                                     keys->kebab-case keys->camel-case]]
             [onespot.core    :as osc]
             [onespot.lacinia :as osl])
   (:import [java.time Instant LocalDate]))
@@ -120,12 +121,38 @@
 
 ;;; --------------------------------------------------------------------------------
 
-(defn write-json
-  [entish value]
-  (-> (get-entity entish)
-      (entity->json value)))
+(defn ->json-keys
+  [m]
+  (keys->camel-case m :rename-map (osc/make-core-key->ns-key ::entity-id)))
 
-(defn read-json
-  [entish value]
-  (-> (get-entity entish)
-      (json->entity value)))
+(defn ->json
+  ([entish value]
+   (if-let [entity (when (osc/registered? entish)
+                     (get-entity entish))]
+     (entity->json entity value)
+     ;; We assume the native JSON coercion can handle it.
+     [entish value]))
+  ([m]
+   (->> m
+        (map (fn [[k v]]
+               [k (->json k v)]))
+        (into {}))))
+
+;;;
+
+(defn ->core-keys
+  [m]
+  (keys->kebab-case m :rename-map (osc/make-ns-key->core-key ::entity-id)))
+
+(defn ->core
+  ([entish value]
+   (if-let [entity (when (osc/registered? entish)
+                     (get-entity entish))]
+     (json->entity entity value)
+     ;; We assume the native JSON coercion can handle it.
+     value))
+  ([m]
+   (->> m
+        (map (fn [[k v]]
+               [k (->core k v)]))
+        (into {}))))
