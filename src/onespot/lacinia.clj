@@ -1,10 +1,11 @@
 (ns onespot.lacinia
   (:require [clojure.string :as s]
             [clojure.walk :refer [postwalk]]
-            [camel-snake-kebab.core :as csk :refer [->PascalCaseKeyword
-                                                    ->camelCaseKeyword]]
+            ;;
             [oberon.utils :refer [nil-when->> map-entry hash-map*]]
             ;;
+            [onespot.snakes :refer [->PascalCaseKeyword ->camelCaseKeyword ->SCREAMING_SNAKE_CASE_KEYWORD
+                                    keys->camel-case keys->kebab-case]]
             [onespot.core :as osc]))
 
 ;;; --------------------------------------------------------------------------------
@@ -25,6 +26,8 @@
 (defn entity-id
   [entity-id]
   (-> entity-id osc/canonical-entity-id osc/pull ::entity-id))
+
+;;; --------------------------------------------------------------------------------
 
 (defn rec-output-ids
   [entity-id]
@@ -199,7 +202,7 @@
       :else (throw (ex-info (format "Can't convert arg-id `%s` to a field-ref." arg-id)
                             {:arg-id arg-id})))))
 
-(defn end-point-args
+(defn compute-gql-args
   [schema]
   (->> (extract-map-entries schema (fn [[k v]]
                                      (and (map? v)
@@ -283,7 +286,7 @@
       :else (throw (ex-info (format "Can't convert return-type `%s` to a field-ref." return-type)
                             {:return-type return-type})))))
 
-(defn return-types
+(defn compute-gql-returns
   [schema]
   (->> (extract-map-entries schema (fn [[k v]]
                                      (and (map? v)
@@ -366,17 +369,17 @@
                         (mapv (fn [enum]
                                 (cond
                                   (keyword? enum)
-                                  (csk/->SCREAMING_SNAKE_CASE_KEYWORD enum)
+                                  (->SCREAMING_SNAKE_CASE_KEYWORD enum)
                                   ;;
                                   (map? enum)
                                   (let [{:keys [value description]} enum]
                                     (cond
                                       (and value description)
-                                      {:enum-value  (csk/->SCREAMING_SNAKE_CASE_KEYWORD value)
+                                      {:enum-value  (->SCREAMING_SNAKE_CASE_KEYWORD value)
                                        :description description}
                                       ;;
                                       value
-                                      (csk/->SCREAMING_SNAKE_CASE_KEYWORD value)
+                                      (->SCREAMING_SNAKE_CASE_KEYWORD value)
                                       ;;
                                       :else
                                       (throw (ex-info "An enum must have a value."
@@ -386,21 +389,36 @@
 
 ;;; --------------------------------------------------------------------------------
 
+(defn clj->endpoint
+  [gql-args
+   gql-returns
+   ;;
+   [clj-name end-point]]
+  [(clj-name->gql-name clj-name)
+   (hash-map* {:type (-> end-point :type gql-returns :gql-type)}
+              :args  (->> gql-args
+                          clj-name
+                          (map (fn [{:keys [gql-arg-id gql-type]}]
+                                 [gql-arg-id {:type gql-type}]))
+                          (into {})
+                          (nil-when->> empty?))
+              :resolve (end-point :resolve))])
+
 (defn schema->gql
   [schema]
-  (let [ret-types (return-types schema)
-        args      (end-point-args schema)
+  (let [gql-args    (compute-gql-args    schema)
+        gql-returns (compute-gql-returns schema)
         ;;
         get-attr-ids   (fn [entity-id]
                          (concat (osc/rec-attr-ids entity-id)
                                  (rec-output-ids   entity-id)))
-        out-entity-ids (osc/walk-entities (->> ret-types
+        out-entity-ids (osc/walk-entities (->> gql-returns
                                                (map second)
                                                (map :entity-id)
                                                (filter osc/registered?)
                                                distinct)
                                           :get-attr-ids get-attr-ids)
-        in-entity-ids  (osc/walk-entities (->> args
+        in-entity-ids  (osc/walk-entities (->> gql-args
                                                (mapcat second)
                                                (map :entity-id)
                                                (filter osc/registered?)
@@ -424,24 +442,15 @@
                                (map #(-> % osc/scalar scalar->enum))
                                (into {}))
         ;;
-        ->endpoints   (fn [k]
-                        (->> schema k
-                             (map (fn [[clj-name end-point]]
-                                    [(clj-name->gql-name clj-name)
-                                     (hash-map* {:type (-> end-point :type ret-types :gql-type)}
-                                                :args  (->> args
-                                                            clj-name
-                                                            (map (fn [{:keys [gql-arg-id gql-type]}]
-                                                                   [gql-arg-id {:type gql-type}]))
-                                                            (into {})
-                                                            (nil-when->> empty?))
-                                                :resolve (end-point :resolve))]))
+        ->endpoints   (fn [endpoints]
+                        (->> endpoints
+                             (map #(clj->endpoint gql-args gql-returns %))
                              (into {})))]
     {:enums         enums
      :objects       out-objects
      :input-objects in-objects
-     :queries       (->endpoints :queries)
-     :mutations     (->endpoints :mutations)}))
+     :queries       (some-> schema :queries   ->endpoints)
+     :mutations     (some-> schema :mutations ->endpoints)}))
 
 ;;; --------------------------------------------------------------------------------
 
@@ -475,3 +484,13 @@
                ;;
                :else %)
             schema))
+
+;;; --------------------------------------------------------------------------------
+
+(defn ->lacinia-keys
+  [m]
+  (keys->camel-case m :rename-map (osc/make-core-key->ns-key ::entity-id)))
+
+(defn ->core-keys
+  [m]
+  (keys->kebab-case m :rename-map (osc/make-ns-key->core-key ::entity-id)))

@@ -49,6 +49,7 @@
          ::osc/label "The Family Name")
   ;;
   (attr! :day ::osc/local-date)
+  (attr! :dob ::osc/local-date)
   (attr! :now ::osc/instant)
   ;;
   (attr! :contact-type  :contact-type-enum)
@@ -76,8 +77,10 @@
          :given-name
          :family-name
          :shirt-size
+         :dob
          :active?]
-        ::osc/identity-ids [:person-id])
+        ::osc/identity-ids [:person-id]
+        ::osc/optional-ids [:dob])
 
   (rec! :new-person
         (osc/rec-value-ids :person))
