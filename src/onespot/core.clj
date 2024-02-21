@@ -95,14 +95,6 @@
                        {:entity-id entity-id :kind kind :expected-kind expected-kind})))
      result)))
 
-;;;
-
-(defn attrs
-  []
-  (->> @+registry+
-       (filter #(-> % first attr?))
-       (map second)))
-
 ;;; --------------------------------------------------------------------------------
 
 (defn canonical-entity-id
@@ -267,6 +259,34 @@
                                  ::identity-ids identity-ids
                                  ::value-ids    value-ids
                                  ::optional-set (-> optional-set (nil-when-> empty?))))))
+
+;;;
+
+(defn attrs
+  []
+  (->> @+registry+
+       (filter #(-> % first attr?))
+       (map second)))
+
+(defn make-core-key->ns-key
+  [ns-entity-id]
+  (->> (attrs)
+       (map (fn [attr]
+              (let [entity-id    (entity-id    attr)
+                    ns-entity-id (ns-entity-id attr)]
+                (when-not (= entity-id ns-entity-id)
+                  [entity-id ns-entity-id]))))
+       (into {})))
+
+(defn make-ns-key->core-key
+  [ns-entity-id]
+  (->> (attrs)
+       (map (fn [attr]
+              (let [entity-id    (entity-id    attr)
+                    ns-entity-id (ns-entity-id attr)]
+                (when-not (= entity-id ns-entity-id)
+                  [ns-entity-id entity-id]))))
+       (into {})))
 
 ;;;
 
