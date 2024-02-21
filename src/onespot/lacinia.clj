@@ -122,13 +122,23 @@
         ;;
         entity-id (:type info)
         many?     (or (-> info :many?)
-                      (osc/series? entity-id)
-                      (and (osc/attr? entity-id)
-                           (-> entity-id
-                               osc/attr
-                               osc/attr-entity
-                               osc/series?)))]
+                      (when (osc/registered? entity-id)
+                        (cond
+                          (osc/series? entity-id) true
+                          (osc/attr? entity-id)   (-> entity-id
+                                                      osc/attr
+                                                      osc/attr-entity
+                                                      osc/series?)
+                          :else false)))]
     (cond
+      (native? entity-id)
+      {:entity-id  entity-id
+       :clj-arg-id arg-id
+       :gql-arg-id (->camelCaseKeyword arg-id)
+       :gql-type   (->gql-type entity-id :in many? optional?)
+       :many?      many?
+       :optional?  optional?}
+      ;;
       (osc/scalar? entity-id)
       (let [entity (osc/scalar entity-id)]
         {:entity-id  entity-id
@@ -185,14 +195,6 @@
          :gql-type    (->gql-type (or (attr-entity ::gql-type)
                                       (attr-entity ::osc/entity-id))
                                   :in many? optional?)})
-      ;;
-      (native? entity-id)
-      {:entity-id  entity-id
-       :clj-arg-id arg-id
-       :gql-arg-id (->camelCaseKeyword arg-id)
-       :gql-type   (->gql-type entity-id :in many? optional?)
-       :many?      many?
-       :optional?  optional?}
       ;;
       :else (throw (ex-info (format "Can't convert arg-id `%s` to a field-ref." arg-id)
                             {:arg-id arg-id})))))
