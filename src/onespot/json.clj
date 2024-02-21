@@ -7,6 +7,7 @@
             ;;
             [oberon.utils :refer [map-entry]]
             ;;
+            [onespot.snakes  :refer [->SCREAMING_SNAKE_CASE_STRING ->kebab-case-keyword ->kebab-case-string keys->kebab-case]]
             [onespot.core    :as osc]
             [onespot.lacinia :as osl])
   (:import [java.time Instant LocalDate]))
@@ -17,29 +18,6 @@
 (defn-   ^:private set-tmp!
   [value]
   (swap! tmp (constantly value)))
-
-;;; --------------------------------------------------------------------------------
-;;  Memoized as recommended by CSK project.
-
-(def ->camelCase
-  (m/fifo csk/->camelCase {} :fifo/threshold 1024))
-
-(def ->kebab-case-string
-  (m/fifo csk/->kebab-case-string {} :fifo/threshold 1024))
-
-(def ->kebab-case-keyword
-  (m/fifo csk/->kebab-case-keyword {} :fifo/threshold 1024))
-
-(def ->SCREAMING_SNAKE_CASE_STRING
-  (m/fifo csk/->SCREAMING_SNAKE_CASE_STRING {} :fifo/threshold 1024))
-
-(defn keys->camel-case
-  [m]
-  (cske/transform-keys ->camelCase m))
-
-(defn keys->kebab-case
-  [m]
-  (cske/transform-keys ->kebab-case-keyword m))
 
 ;;; --------------------------------------------------------------------------------
 
