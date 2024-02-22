@@ -452,6 +452,15 @@
      :queries       (some-> schema :queries   ->endpoints)
      :mutations     (some-> schema :mutations ->endpoints)}))
 
+(defn schema->arg-entity-map
+  [schema]
+  (->> (compute-gql-args schema)
+       (map (fn [[op-key arg-defs]]
+              [op-key (->> arg-defs
+                           (map (juxt :clj-arg-id :entity-id))
+                           (into {}))]))
+       (into {})))
+
 ;;; --------------------------------------------------------------------------------
 
 (defn resolvable?

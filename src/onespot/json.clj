@@ -144,15 +144,20 @@
   [m]
   (keys->kebab-case m :rename-map (osc/make-ns-key->core-key ::entity-id)))
 
+(defn ->core-value
+  [entish value]
+  (if-let [entity (when (osc/registered? entish)
+                    (get-entity entish))]
+    (json->entity entity value)
+    ;; We assume the native JSON coercion can handle it.
+    value))
+
 (defn ->core
-  ([entish value]
-   (if-let [entity (when (osc/registered? entish)
-                     (get-entity entish))]
-     (json->entity entity value)
-     ;; We assume the native JSON coercion can handle it.
-     value))
-  ([m]
-   (->> m
+  ([record] (->core record {}))
+  ;;
+  ([record key->entity-id]
+   (->> record
         (map (fn [[k v]]
-               [k (->core k v)]))
+               [k (->core-value (key->entity-id k k)
+                                v)]))
         (into {}))))
