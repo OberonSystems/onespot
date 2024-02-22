@@ -221,8 +221,18 @@
          #{:given-name ::osc/string}))
 
   (is (= (walk-entities :person)
-         #{:active? ::osc/positive-integer :person :person-id :given-name ::osc/string
-           :shirt-size-type :shirt-size :family-name ::osc/boolean}))
+         #{:onespot.core/positive-integer
+           :active?
+           :person
+           :person-id
+           :onespot.core/string
+           :given-name
+           :onespot.core/local-date
+           :dob
+           :shirt-size-type
+           :shirt-size
+           :family-name
+           :onespot.core/boolean}))
 
   ;; Should be the same as :person is contained in :people so it's a
   ;; referenced type and should be included either way.
