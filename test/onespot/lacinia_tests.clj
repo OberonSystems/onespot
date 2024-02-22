@@ -1,9 +1,7 @@
 (ns onespot.lacinia-tests
   (:require [clojure.pprint :refer [pprint]]
             [clojure.test :refer [deftest testing is run-tests]]
-            [clojure.data :refer [diff]]
-            ;;
-            [cheshire.core :refer [generate-string]])
+            [clojure.data :refer [diff]])
   (:require [onespot.core :refer :all :as osc]
             [onespot.json :as osj]
             [onespot.lacinia :as osl]
