@@ -208,10 +208,11 @@
                                      (and (map? v)
                                           (contains? v :args))))
        (map (fn [[k v]]
-              [k (->> v
-                      :args
-                      (mapv (fn [[arg-id info]]
-                              (arg->field-ref arg-id info))))]))
+              [k
+               (->> v
+                    :args
+                    (mapv (fn [[arg-id info]]
+                            (arg->field-ref arg-id info))))]))
        (into {})))
 
 ;;; --------------------------------------------------------------------------------
@@ -456,9 +457,10 @@
   [schema]
   (->> (compute-gql-args schema)
        (map (fn [[op-key arg-defs]]
-              [op-key (->> arg-defs
-                           (map (juxt :clj-arg-id :entity-id))
-                           (into {}))]))
+              [op-key
+               (->> arg-defs
+                    (map (juxt :clj-arg-id :entity-id))
+                    (into {}))]))
        (into {})))
 
 ;;; --------------------------------------------------------------------------------
