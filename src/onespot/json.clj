@@ -144,20 +144,24 @@
   [m]
   (keys->kebab-case m :rename-map (osc/make-ns-key->core-key ::entity-id)))
 
-(defn ->core-value
-  [entish value]
-  (if-let [entity (when (osc/registered? entish)
-                    (get-entity entish))]
-    (json->entity entity value)
-    ;; We assume the native JSON coercion can handle it.
-    value))
-
 (defn ->core
-  ([record] (->core record {}))
-  ;;
-  ([record key->entity-id]
-   (->> record
+  ([entish value]
+   (if-let [entity (when (osc/registered? entish)
+                     (get-entity entish))]
+     (json->entity entity value)
+     ;; We assume the native JSON coercion can handle it.
+     value))
+  ([m]
+   (->> m
         (map (fn [[k v]]
-               [k (->core-value (key->entity-id k k)
-                                v)]))
+               (println k v)
+               [k (->core k v)]))
         (into {}))))
+
+(defn args->core
+  "Converts Lacinia args to core values."
+  [record key->entity-id]
+  (->> record
+       (map (fn [[k v]]
+              [k (->core (key->entity-id k k) v)]))
+       (into {})))

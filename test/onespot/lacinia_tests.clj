@@ -273,13 +273,7 @@
         ;; (compute-gql-args    schema)
         ;; arg-key-maps (osl/compute-arg-key-maps schema)
         ;;
-        q1 (get-in gql-schema [:queries :query1 :args])
-        a1 {:person {:personId   3
-                     :givenName  "given-name"
-                     :familyName "family-name"
-                     :shirtSize  "SM"
-                     :dob        "2022-01-01"
-                     :isActive   true}}]
+        q1 (get-in gql-schema [:queries :query1 :args])]
     (is (= q1 '{:bob {:type (non-null :PersonIn)}}))
     (is (= arg-map {:query-1 {:bob :person}}))
 
@@ -290,7 +284,7 @@
                       :dob        "2022-01-01"
                       :isActive   true}}
                osl/->core-keys
-               (osj/->core (:query-1 arg-map)))
+               (osj/args->core (:query-1 arg-map)))
            {:bob {:person-id   3
                   :given-name  "given-name"
                   :family-name "family-name"
