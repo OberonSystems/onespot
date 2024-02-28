@@ -2,7 +2,9 @@
   (:require [clojure.pprint :refer [pprint]]
             [clojure.set :refer [subset? intersection union difference]]
             ;;
-            [oberon.utils :refer [nil-when-> hash-map* capitalize-keyword]]))
+            [oberon.utils :refer [nil-when-> hash-map* capitalize-keyword]]
+            ;;
+            [onespot.cache :as c]))
 
 ;;;
 
@@ -10,6 +12,7 @@
 
 (defn clear!
   []
+  (c/clear!)
   (swap! +registry+ (constantly {})))
 
 (defn registered?
@@ -79,6 +82,7 @@
   [entity-id kind m]
   (when-not (+kinds+ kind)
     (throw (ex-info (format "Cannot register unknown kind: `%s`." kind) {:kind kind})))
+  (c/clear!)
   (swap! +registry+ #(assoc % entity-id (assoc m ::kind kind)))
   entity-id)
 
