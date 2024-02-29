@@ -14,7 +14,7 @@
             [camel-snake-kebab.extras :as cske]
             ;;
             [oberon.utils :refer [dump-> dump->>]]
-            [onespot.core :as osc])
+            [onespot.core :as os])
   (:import [java.sql
             Date Timestamp
             Array
@@ -45,11 +45,11 @@
 
 (defn entity-id
   [entity-id]
-  (-> entity-id osc/canonical-entity-id osc/pull ::entity-id))
+  (-> entity-id os/canonical-entity-id os/pull ::entity-id))
 
 (defn get-table
   [entity-id]
-  (or (-> (osc/rec entity-id) ::info ::table)
+  (or (-> (os/rec entity-id) ::info ::table)
       (throw (ex-info (format "Failed to get DB Table for %s" entity-id)
                       {:entity-id entity-id}))))
 
@@ -218,7 +218,7 @@
     ::keys [entity-id] :as entity} v]
   (make-enum (or enum-type
                  entity-id
-                 (osc/entity-id entity))
+                 (os/entity-id entity))
              v))
 
 (defmethod entity->db ::text-array
@@ -255,17 +255,17 @@
                 ;; the conversion.  Attrs are `named` things that
                 ;; point to another type of entity so they don't have
                 ;; any ::info options themselves.
-                (and (osc/registered? k)
-                     (osc/attr?       k))
-                (let [entity        (osc/attr k)
-                      entity-id     (::entity-id     entity)
-                      osc-entity-id (::osc/entity-id entity)]
+                (and (os/registered? k)
+                     (os/attr?       k))
+                (let [entity       (os/attr k)
+                      entity-id    (::entity-id entity)
+                      os-entity-id (os/entity-id  entity)]
                   [(if db-names?
-                     (-> (or entity-id osc-entity-id) as-db-name)
-                     osc-entity-id)
+                     (-> (or entity-id os-entity-id) as-db-name)
+                     os-entity-id)
                    ;; If the attr-entity isn't specialised for ::kind
                    ;; then the native coercion will be called.
-                   (entity->db (osc/attr-entity osc-entity-id) v)])
+                   (entity->db (os/attr-entity os-entity-id) v)])
                 ;;
                 :else [(if db-names?
                          (as-db-name k)
@@ -306,12 +306,12 @@
        (map (fn [[k v]]
               (let [entity-id (get attr-map k k)]
                 (cond
-                  (not (osc/registered? entity-id)) [k v]
+                  (not (os/registered? entity-id)) [k v]
                   ;;
-                  (osc/attr? entity-id) (let [attr        (osc/attr entity-id)
-                                              attr-entity (osc/attr-entity attr)]
+                  (os/attr? entity-id) (let [attr        (os/attr entity-id)
+                                             attr-entity (os/attr-entity attr)]
                                           [entity-id (db->entity attr-entity v)])
-                  :else [entity-id (db->entity (osc/pull entity-id) v)]))))
+                  :else [entity-id (db->entity (os/pull entity-id) v)]))))
        (into {})))
 
 (defn make-row->record-attr-map
@@ -319,12 +319,12 @@
   map it to the onespot entity-id so that we can correctly do the
   translations and coercions later on."
   []
-  (->> (osc/attrs)
+  (->> (os/attrs)
        (map (fn [attr]
-              (let [entity-id     (entity-id attr)
-                    osc-entity-id (osc/entity-id attr)]
-                (when-not (= entity-id osc-entity-id)
-                  [entity-id osc-entity-id]))))
+              (let [entity-id    (entity-id    attr)
+                    os-entity-id (os/entity-id attr)]
+                (when-not (= entity-id os-entity-id)
+                  [entity-id os-entity-id]))))
        (into {})))
 
 ;;; --------------------------------------------------------------------------------
@@ -427,7 +427,7 @@
 
 (defn get-identity
   [entity-id record]
-  (or (some-> (osc/rec-identity entity-id record)
+  (or (some-> (os/rec-identity entity-id record)
               (record->row :domain    (get-table entity-id)
                            :db-names? true))
       (throw (ex-info (format "Failed to extract identity for %s" entity-id)
@@ -436,7 +436,7 @@
 (defn get-values
   [entity-id record values extras]
   (some-> (merge (or values
-                     (osc/rec-values entity-id record))
+                     (os/rec-values entity-id record))
                  extras)
           (record->row :domain    (get-table entity-id)
                        :db-names? true)))
