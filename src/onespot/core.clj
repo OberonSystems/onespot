@@ -21,25 +21,25 @@
 
 ;; Probably include :bag in the future for having an unordered set of
 ;; different 'kinds' of objects.
-(def +kinds+ #{::scalar ::rec ::series ::attr})
+(def +kinds+ #{:scalar :rec :series :attr})
 
 (declare kind)
 (defn kind?
   [entity-id x]
   (when-not (+kinds+ x)
-    (throw (ex-info (format "%s is not a valid ::kind" x) {:entity-id entity-id :x x})))
+    (throw (ex-info (format "%s is not a valid :kind" x) {:entity-id entity-id :x x})))
   (= (kind entity-id) x))
 
 (defn scalar?
   [entity-id]
-  (kind? entity-id ::scalar))
+  (kind? entity-id :scalar))
 
 (defn enum?
   [entity-id]
-  (and (kind? entity-id ::scalar)
+  (and (kind? entity-id :scalar)
        (-> @+registry+
            (get entity-id)
-           (contains? ::enums))))
+           (contains? :enums))))
 
 (defn canonicalise-enums
   "Accepts a sequence of
@@ -66,15 +66,15 @@
 
 (defn rec?
   [entity-id]
-  (kind? entity-id ::rec))
+  (kind? entity-id :rec))
 
 (defn series?
   [entity-id]
-  (kind? entity-id ::series))
+  (kind? entity-id :series))
 
 (defn attr?
   [entity-id]
-  (kind? entity-id ::attr))
+  (kind? entity-id :attr))
 
 ;;;
 
@@ -83,7 +83,7 @@
   (when-not (+kinds+ kind)
     (throw (ex-info (format "Cannot register unknown kind: `%s`." kind) {:kind kind})))
   (c/clear!)
-  (swap! +registry+ #(assoc % entity-id (assoc m ::kind kind)))
+  (swap! +registry+ #(assoc % entity-id (assoc m :kind kind)))
   entity-id)
 
 (defn pull
@@ -93,7 +93,7 @@
                        {:entity-id entity-id}))))
 
   ([entity-id expected-kind]
-   (let [{::keys [kind] :as result} (pull entity-id)]
+   (let [{:keys [kind] :as result} (pull entity-id)]
      (when-not (= kind expected-kind)
        (throw (ex-info (format "Pulled entity `%s` does not have the expected-kind: `%s` != `%s`." entity-id kind expected-kind)
                        {:entity-id entity-id :kind kind :expected-kind expected-kind})))
@@ -111,8 +111,8 @@
     (and (keyword? entish) (registered? entish))
     entish
     ;;
-    (and (map? entish) (-> entish ::entity-id registered?))
-    (-> entish ::entity-id)
+    (and (map? entish) (-> entish :entity-id registered?))
+    (-> entish :entity-id)
     ;;
     :else (throw (ex-info (format "Can't find entity-id for `%s`, it must be a map or a keyword." entish)
                           {:entish entish}))))
@@ -121,43 +121,43 @@
 
 (defn scalar
   [entity-id]
-  (-> entity-id canonical-entity-id (pull ::scalar)))
+  (-> entity-id canonical-entity-id (pull :scalar)))
 
 (defn rec
   [entity-id]
-  (-> entity-id canonical-entity-id (pull ::rec)))
+  (-> entity-id canonical-entity-id (pull :rec)))
 
 (defn series
   [entity-id]
-  (-> entity-id canonical-entity-id (pull ::series)))
+  (-> entity-id canonical-entity-id (pull :series)))
 
 (defn attr
   [entity-id]
-  (-> entity-id canonical-entity-id (pull ::attr)))
+  (-> entity-id canonical-entity-id (pull :attr)))
 
 ;;  Functions to pull common values out of the registry.
 
 (defn entity-id
   [entity-id]
-  (-> entity-id canonical-entity-id pull ::entity-id))
+  (-> entity-id canonical-entity-id pull :entity-id))
 
 (defn kind
   [entity-id]
-  (-> entity-id canonical-entity-id pull ::kind))
+  (-> entity-id canonical-entity-id pull :kind))
 
 (defn description
   [entity-id]
-  (-> entity-id canonical-entity-id pull ::description))
+  (-> entity-id canonical-entity-id pull :description))
 
 (defn validator
   [entity-id]
-  (-> entity-id canonical-entity-id pull ::validator))
+  (-> entity-id canonical-entity-id pull :validator))
 
 (defn label
   [entity-id]
   (when-not (registered? entity-id)
     (throw (ex-info (format "Can't find/compute a label for an unregistered entity: `%s`." entity-id))))
-  (or (-> entity-id canonical-entity-id pull ::label)
+  (or (-> entity-id canonical-entity-id pull :label)
       (capitalize-keyword entity-id)))
 
 ;;; --------------------------------------------------------------------------------
@@ -174,26 +174,26 @@
 
 (defn scalar!
   [entity-id validator & {:as info}]
-  (throw-when-registered ::scalar entity-id)
-  (push entity-id ::scalar (assoc info
-                                  ::entity-id entity-id
-                                  ::validator validator)))
+  (throw-when-registered :scalar entity-id)
+  (push entity-id :scalar (assoc info
+                                  :entity-id entity-id
+                                  :validator validator)))
 
 ;;;
 
 (defn attr!
   [entity-id attr-entity-id & {:as info}]
-  (throw-when-registered ::attr entity-id)
+  (throw-when-registered :attr entity-id)
   (when-not (or (scalar? attr-entity-id) (rec? attr-entity-id) (series? attr-entity-id))
     (throw (ex-info (format "Attr `%s` must be associated with a scalar, rec or series not: `%s`." entity-id attr-entity-id)
                     {:entity-id entity-id :attr-entity-id attr-entity-id})))
-  (push entity-id ::attr (assoc info
-                                ::entity-id      entity-id
-                                ::attr-entity-id attr-entity-id)))
+  (push entity-id :attr (assoc info
+                                :entity-id      entity-id
+                                :attr-entity-id attr-entity-id)))
 
 (defn attr-entity-id
   [entity-id]
-  (-> (attr entity-id) ::attr-entity-id))
+  (-> (attr entity-id) :attr-entity-id))
 
 (defn attr-entity
   [entity-id]
@@ -203,17 +203,17 @@
 
 (defn series!
   [entity-id series-entity-id & {:as info}]
-  (throw-when-registered ::series entity-id)
+  (throw-when-registered :series entity-id)
   (when-not (or (scalar? series-entity-id) (rec? series-entity-id))
     (throw (ex-info (format "Series `%s` must refer to a scalar or a rec not: `%s`." entity-id series-entity-id)
                     {:entity-id entity-id :series-entity-id series-entity-id})))
-  (push entity-id ::series (assoc info
-                                  ::entity-id        entity-id
-                                  ::series-entity-id series-entity-id)))
+  (push entity-id :series (assoc info
+                                  :entity-id        entity-id
+                                  :series-entity-id series-entity-id)))
 
 (defn series-entity-id
   [entity-id]
-  (-> entity-id series ::series-entity-id))
+  (-> entity-id series :series-entity-id))
 
 (defn series-entity
   [entity-id]
@@ -222,16 +222,18 @@
 ;;;
 
 (defn rec!
-  [entity-id attr-ids & {::keys [identity-ids optional-ids]
-                         :as info}]
-  (throw-when-registered ::rec entity-id)
+  [entity-id attr-ids &
+   {:keys [identity-ids optional-ids readonly-ids] :as info}]
+  (throw-when-registered :rec entity-id)
   (let [attr-ids     (some-> attr-ids     seq vec)
         identity-ids (some-> identity-ids seq vec)
         optional-ids (some-> optional-ids seq vec)
+        readonly-ids (some-> readonly-ids seq vec)
         ;;
         attr-set     (set attr-ids)
         identity-set (set identity-ids)
         optional-set (set optional-ids)
+        readonly-set (set readonly-ids)
         ;;
         value-ids (some->> attr-ids (remove identity-set) seq vec)]
 
@@ -254,15 +256,27 @@
 
     (when-let [optional-identity-ids (-> (intersection optional-set identity-set)
                                          (nil-when-> empty?))]
-      (throw (ex-info (format "Cannot register record `%s` as some Identity Ids have been marked as optional." entity-id)
+      (throw (ex-info (format "Cannot register record `%s` as some identity-ids have been marked as optional." entity-id)
                       {:entity-id entity-id :optional-identity-ids optional-identity-ids})))
 
-    (push entity-id ::rec (assoc info
-                                 ::entity-id    entity-id
-                                 ::attr-ids     attr-ids
-                                 ::identity-ids identity-ids
-                                 ::value-ids    value-ids
-                                 ::optional-set (-> optional-set (nil-when-> empty?))))))
+    ;; Readonly Checks
+    (when-not (every? attr? readonly-ids)
+      (let [unregistered (->> readonly-ids (remove attr?) set)]
+        (throw (ex-info (format "Cannot register record `%s` with unregistered readonly attributes: %s." entity-id unregistered)
+                        {:entity-id entity-id :unregistered unregistered}))))
+
+    (when-let [readonly-identity-ids (-> (intersection readonly-set attr-set)
+                                         (nil-when-> empty?))]
+      (throw (ex-info (format "Cannot register record `%s` as some readonly-ids have been included in the attr-ids." entity-id)
+                      {:entity-id entity-id :readonly-identity-ids readonly-identity-ids})))
+
+    (push entity-id :rec (assoc info
+                                 :entity-id    entity-id
+                                 :attr-ids     attr-ids
+                                 :identity-ids identity-ids
+                                 :value-ids    value-ids
+                                 :optional-set (-> optional-set (nil-when-> empty?))
+                                 :readonly-set (-> readonly-set (nil-when-> empty?))))))
 
 ;;;
 
@@ -294,19 +308,29 @@
 
 ;;;
 
-(defn rec-attr-ids
+(defn rec-readonly-ids  [entity-id]
+  (-> entity-id rec :readonly-ids))
+
+(defn rec-readonly-attrs
   [entity-id]
-  (-> entity-id rec ::attr-ids))
+  (->> (rec-readonly-ids entity-id)
+       (map attr)
+       seq))
+
+(defn rec-attr-ids
+  [entity-id & {:keys [readonly?]}]
+  (into (-> entity-id rec :attr-ids)
+        (when readonly? (rec-readonly-ids entity-id))))
 
 (defn rec-attrs
-  [entity-id]
-  (->> (rec-attr-ids entity-id)
+  [entity-id & {:keys [readonly?]}]
+  (->> (rec-attr-ids entity-id :readonly? readonly?)
        (map attr)
        seq))
 
 (defn rec-identity-ids
   [entity-id]
-  (-> entity-id rec ::identity-ids))
+  (-> entity-id rec :identity-ids))
 
 (defn rec-identity-attrs
   [entity-id]
@@ -316,7 +340,7 @@
 
 (defn rec-value-ids
   [entity-id]
-  (-> (rec entity-id) ::value-ids))
+  (-> (rec entity-id) :value-ids))
 
 (defn rec-value-attrs
   [entity-id]
@@ -325,11 +349,11 @@
 
 (defn rec-optional-set
   [entity-id]
-  (-> entity-id rec ::optional-set))
+  (-> entity-id rec :optional-set))
 
 (defn optional?
-  [{::keys [optional-set] :as rec}
-   {attr-id ::entity-id :as attr}]
+  [{:keys [optional-set] :as rec}
+   {attr-id :entity-id :as attr}]
   (contains? optional-set attr-id))
 
 (defn required?
@@ -361,36 +385,35 @@
 
   Avoids recursion by tracking previously visited entity-ids.
 
-  By default walks all ::attr-ids but call can pass a get-attr-ids
+  By default walks all :attr-ids but call can pass a get-attr-ids
   function to change the attr-ids to be walked.
 
   For example the caller may choose to add an additional list of
   attr-ids that they have added to the rec.  The Lacinia module does
   this to include output-ids when generating the GQL Schema."
-  [entity-id-queue & {:keys [get-attr-ids]}]
-  (let [get-attr-ids (or get-attr-ids rec-attr-ids)]
-    (loop [queue   (if (keyword? entity-id-queue)
-                     [entity-id-queue]
-                     entity-id-queue)
-           visited #{}]
-      (let [[entity-id & queue] queue]
-        (cond
-          (nil? entity-id) visited
-          ;;
-          (contains? visited entity-id)
-          (recur queue visited)
-          ;;
-          (scalar? entity-id)
-          (recur queue (conj visited entity-id))
-          ;;
-          (rec? entity-id)
-          (recur (into queue (get-attr-ids entity-id))
-                 (conj visited entity-id))
-          ;;
-          (series? entity-id)
-          (recur (conj queue (series-entity-id entity-id))
-                 (conj visited entity-id))
-          ;;
-          (attr? entity-id)
-          (recur (conj queue (attr-entity-id entity-id))
-                 (conj visited entity-id)))))))
+  [entity-id-queue & {:keys [readonly?]}]
+  (loop [queue   (if (keyword? entity-id-queue)
+                   [entity-id-queue]
+                   entity-id-queue)
+         visited #{}]
+    (let [[entity-id & queue] queue]
+      (cond
+        (nil? entity-id) visited
+        ;;
+        (contains? visited entity-id)
+        (recur queue visited)
+        ;;
+        (scalar? entity-id)
+        (recur queue (conj visited entity-id))
+        ;;
+        (rec? entity-id)
+        (recur (into queue (rec-attr-ids entity-id :readonly? readonly?))
+               (conj visited entity-id))
+        ;;
+        (series? entity-id)
+        (recur (conj queue (series-entity-id entity-id))
+               (conj visited entity-id))
+        ;;
+        (attr? entity-id)
+        (recur (conj queue (attr-entity-id entity-id))
+               (conj visited entity-id))))))

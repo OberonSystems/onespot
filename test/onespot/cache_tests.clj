@@ -1,4 +1,4 @@
-(ns onespot.core-test
+(ns onespot.cache-tests
   (:require [clojure.test :refer [deftest testing is run-tests]])
   (:require [onespot.cache :as c]
             [onespot.core  :as osc]

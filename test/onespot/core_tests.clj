@@ -1,6 +1,6 @@
 (ns onespot.core-tests
   (:require [clojure.test :refer [deftest testing is run-tests]])
-  (:require [onespot.core :refer :all :as osc]
+  (:require [onespot.core :refer :all :as os]
             [onespot.validators :refer :all]
             [onespot.validate :refer [validate]]
             ;;
@@ -48,25 +48,25 @@
   (rec! :person
         [:person-id :given-name :nickname :family-name]
 
-        ::osc/identity-ids [:person-id]
-        ::osc/optional-ids [:nickname]
+        :identity-ids [:person-id]
+        :optional-ids [:nickname]
         ;;
         ::something-else :hi-there)
 
-  (is (= (osc/rec-attr-ids :person)
+  (is (= (os/rec-attr-ids :person)
          [:person-id :given-name :nickname :family-name]))
 
-  (is (= (osc/rec-optional-set :person)
+  (is (= (os/rec-optional-set :person)
          #{:nickname}))
 
-  (is (= (osc/rec-content :person {:person-id 123 :given-name "given" :family-name "family"
+  (is (= (os/rec-content :person {:person-id 123 :given-name "given" :family-name "family"
                                    :other-stuff :that :gets :ignored})
          {:person-id 123 :given-name "given", :family-name "family"}))
 
-  (is (= (osc/rec-identity :person {:person-id 123 :given-name "given" :family-name "family"})
+  (is (= (os/rec-identity :person {:person-id 123 :given-name "given" :family-name "family"})
          {:person-id 123}))
 
-  (is (= (osc/rec-values :person {:person-id 123 :given-name "given" :family-name "family"})
+  (is (= (os/rec-values :person {:person-id 123 :given-name "given" :family-name "family"})
          {:given-name "given" :family-name "family"}))
 
   (is (code? (validate :person {:person-id   "my-id"
@@ -95,7 +95,7 @@
 
   (rec! :person
         [:person-id :given-name :family-name :contact-info]
-        ::osc/identity-ids [:person-id])
+        :identity-ids [:person-id])
 
   (is (code? (validate :person {:person-id 1234
                                 :given-name "gn"
@@ -124,13 +124,13 @@
 
   (rec! :person
         [:person-id :given-name :family-name :contact-info]
-        ::osc/identity-ids [:person-id]
-        ::osc/optional-ids [:contact-info]
-        ::osc/validator    (fn [{:keys [family-name]}]
-                             (when-not (= family-name "fn")
-                               {:code :bad-value
-                                :message "Family Name must be 'fn'"
-                                :value family-name})))
+        :identity-ids [:person-id]
+        :optional-ids [:contact-info]
+        :validator    (fn [{:keys [family-name]}]
+                        (when-not (= family-name "fn")
+                          {:code :bad-value
+                           :message "Family Name must be 'fn'"
+                           :value family-name})))
 
   (is (code? (validate :person {:person-id 1234
                                 :given-name "gn"
@@ -218,7 +218,7 @@
 (deftest test-walking-recs
   (register-all!)
   (is (= (walk-entities :given-name)
-         #{:given-name ::osc/string}))
+         #{:given-name ::os/string}))
 
   (is (= (walk-entities :person)
          #{:onespot.core/positive-integer
@@ -234,16 +234,27 @@
            :family-name
            :onespot.core/boolean}))
 
-  ;; Should be the same as :person is contained in :people so it's a
-  ;; referenced type and should be included either way.
+  ;; Walking :person or :people should be the same as :person is
+  ;; contained in :people so it's a referenced type and should be
+  ;; included either way.
   (is (= (walk-entities :people)
-         (walk-entities [:person :people]))))
+         (walk-entities [:person :people])))
+
+  (is (= (rec-attr-ids :person-with-readonly)                 [:person-id :given-name]))
+  (is (= (rec-attr-ids :person-with-readonly :readonly? true) [:person-id :given-name :family-name]))
+
+  (is (= (walk-entities :person-with-readonly)
+         #{:onespot.core/positive-integer
+           :person-id
+           :onespot.core/string
+           :person-with-readonly
+           :given-name})))
 
 (deftest test-enums
-  (is (= (osc/canonicalise-enums [:test :this])
+  (is (= (os/canonicalise-enums [:test :this])
          [{:value :test} {:value :this}]))
 
-  (is (= (osc/canonicalise-enums [[:value1 :desc1]
+  (is (= (os/canonicalise-enums [[:value1 :desc1]
                                   [:value2]
                                   [:value3 :desc3]
                                   :value4])

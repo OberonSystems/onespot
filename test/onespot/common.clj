@@ -2,8 +2,8 @@
   (:require [clojure.test :refer [deftest testing is run-tests]])
   (:require [onespot.core :refer :all :as osc]
             [onespot.validators :refer :all]
-            [onespot.lacinia  :as osl]
-            [onespot.json     :as osj]
+            [onespot.lacinia  :as lc]
+            [onespot.json     :as js]
             [onespot.entities :as ose]
             :reload))
 
@@ -29,24 +29,24 @@
   (ose/register-common!)
   (scalar! :string1 non-blank-string)
   (scalar! :string2 non-blank-string
-           ::osc/label       "My Label"
-           ::osc/description "My Description")
+           :label       "My Label"
+           :description "My Description")
   ;;
   (let [contact-types #{:mobile :email}]
     (scalar! :contact-type-enum #(one-of % contact-types)
-             ::osc/enums contact-types))
+             :enums contact-types))
 
   (scalar! :shirt-size-type validate-shirt-size
-           ::osc/enums +shirt-size-enums+))
+           :enums +shirt-size-enums+))
 
 (defn register-attrs!
   []
   (register-scalars!)
   (attr! :person-id   ::osc/positive-integer)
-  (attr! :given-name  ::osc/string ::osj/entity-id :theGivenName)
+  (attr! :given-name  ::osc/string ::js/entity-id :theGivenName)
   (attr! :nickname    ::osc/string)
   (attr! :family-name ::osc/string
-         ::osc/label "The Family Name")
+         :label "The Family Name")
   ;;
   (attr! :day ::osc/local-date)
   (attr! :dob ::osc/local-date)
@@ -56,8 +56,8 @@
   (attr! :contact-value ::osc/string)
 
   (attr! :active?        ::osc/boolean
-         ::osl/entity-id :isActive
-         ::osj/entity-id :isActive)
+         ::lc/entity-id :isActive
+         ::js/entity-id :isActive)
 
   (attr! :shirt-size :shirt-size-type)
 
@@ -70,7 +70,7 @@
   (register-attrs!)
 
   (series! :some-strings :string1)
-  (series! :tags :string1 ::osc/validator a-set)
+  (series! :tags :string1 :validator a-set)
 
   (rec! :person
         [:person-id
@@ -79,32 +79,37 @@
          :shirt-size
          :dob
          :active?]
-        ::osc/identity-ids [:person-id]
-        ::osc/optional-ids [:dob])
+        :identity-ids [:person-id]
+        :optional-ids [:dob])
 
   (rec! :new-person
         (osc/rec-value-ids :person))
 
   (series! :people :person)
 
-  (rec! :person-with-output
+  (rec! :person-with-readonly
+        [:person-id :given-name]
+        :identity-ids [:person-id]
+        :readonly-ids [:family-name])
+
+  (rec! :person-with-readonly
         [:person-id
          :given-name]
-        ::osc/identity-ids [:person-id]
-        ::osl/output-ids   [:family-name])
+        :identity-ids [:person-id]
+        :readonly-ids [:family-name])
 
   (rec! :person-with-optional-fields
         [:person-id :given-name :family-name]
-        ::osc/identity-ids [:person-id]
-        ::osc/optional-ids [:given-name])
+        :identity-ids [:person-id]
+        :optional-ids [:given-name])
 
   (rec! :person-with-core-description
         [:person-id :given-name]
-        ::osc/identity-ids [:person-id]
-        ::osc/description "Core Description")
+        :identity-ids [:person-id]
+        :description "Core Description")
 
   (rec! :person-with-lacinia-description
         [:person-id :given-name]
-        ::osc/identity-ids [:person-id]
-        ::osc/description "Core Description"
-        ::osl/description "Lacinia Description"))
+        :identity-ids [:person-id]
+        :description "Core Description"
+        ::lc/description "Lacinia Description"))

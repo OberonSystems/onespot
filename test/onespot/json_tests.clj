@@ -1,9 +1,9 @@
 (ns onespot.json-test
   (:require [clojure.test :refer [deftest testing is run-tests]])
-  (:require [onespot.core :refer :all :as osc]
+  (:require [onespot.core       :refer :all :as os]
             [onespot.validators :refer :all]
-            [onespot.json :as osj :refer [->core-keys ->core
-                                          ->json-keys ->json]]
+            [onespot.json       :refer [->core-keys ->core
+                                        ->json-keys ->json]]
             [onespot.common :refer :all]
             :reload)
   (:import [java.time LocalDate Instant]))
@@ -11,18 +11,18 @@
 (deftest test-scalars
   (register-scalars!)
 
-  (is (= (->json ::osc/boolean true) true))
-  (is (= (->json ::osc/string "a string") "a string"))
+  (is (= (->json ::os/boolean true) true))
+  (is (= (->json ::os/string "a string") "a string"))
   (is (= (->json :string1 "a string") "a string"))
   (is (= (->json :shirt-size-type :sm) "SM"))
 
-  (is (= (->core ::osc/boolean true) true))
+  (is (= (->core ::os/boolean true) true))
   (is (= (->core :string1 "a string") "a string"))
   (is (= (->core :shirt-size-type "SM") :sm))
 
-  (is (= (->core ::osc/local-date "2024-01-01")
+  (is (= (->core ::os/local-date "2024-01-01")
          (LocalDate/parse "2024-01-01")))
-  (is (= (->core ::osc/instant "2024-01-05T23:13:57.254310Z")
+  (is (= (->core ::os/instant "2024-01-05T23:13:57.254310Z")
          (Instant/parse "2024-01-05T23:13:57.254310Z"))))
 
 (deftest test-attrs
@@ -60,27 +60,27 @@
     (is (= (->> (->json :person2 core) ->json-keys)  json))
     (is (= (->> json ->core-keys (->core :person2)) core)))
 
-  ;; Reading/Writing when entity has additional output attributes
-  (is (= (->> (->json :person-with-output {:person-id 1234 :given-name "Bob" :family-name "Jane"})
+  ;; Reading/Writing when entity has additional readonly attributes
+  (is (= (->> (->json :person-with-readonly {:person-id 1234 :given-name "Bob" :family-name "Jane"})
               ->json-keys)
          {:personId 1234 :theGivenName "Bob" :familyName "Jane"}))
 
-  (is (= (->> (->json :person-with-output {:person-id 1234 :given-name "Bob"})
+  (is (= (->> (->json :person-with-readonly {:person-id 1234 :given-name "Bob"})
               ->json-keys)
          {:personId 1234 :theGivenName "Bob" :familyName nil}))
 
-  (is (= (->> (->json :person-with-output {:person-id 1234})
+  (is (= (->> (->json :person-with-readonly {:person-id 1234})
               ->json-keys)
          {:personId 1234 :theGivenName nil :familyName nil}))
   ;;
   (is (= (->> {:personId 1234 :theGivenName "Bob" :familyName "Jane"}
               ->core-keys
-              (->core :person-with-output) )
+              (->core :person-with-readonly))
          {:person-id 1234 :given-name "Bob"}))
 
   (is (= (->> {:person-id 1234}
               ->core-keys
-              (->core :person-with-output))
+              (->core :person-with-readonly))
          {:person-id 1234 :given-name nil})))
 
 (deftest test-nested-recs
@@ -147,7 +147,7 @@
   (series! :strings :string1)
   (is (= (->json :strings ["one" "two"]) ["one" "two"]))
 
-  (series! :booleans ::osc/boolean)
+  (series! :booleans ::os/boolean)
   (is (= (->json :booleans [true true false]) [true true false]))
 
   (rec! :person [:given-name :active? :shirt-sizes])
