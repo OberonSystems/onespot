@@ -447,36 +447,22 @@
          (and (map? v)
               (contains? v :resolve)))))
 
-(defn resolvable-parent-key
-  [resolvable]
-  (-> (meta resolvable)
-      ::parent-key))
-
-(defn with-parent-key
-  [[k resolvable]]
-  (with-meta resolvable
-    {::parent-key resolvable}))
-
-(def ^:dynamic *schema*)
-
-(defn get-schema
-  []
-  *schema*)
-
 (defn wrap-resolvables
   "Postwalks the schema applying `wrap-resolvable` to all map-entries
   that have map `value` with a `resolve` key.
 
   Replacing the map `value` with the return value of `wrap-resolvable`."
   [schema wrap-resolvable]
-  (binding [*schema* schema]
-    (postwalk #(cond
-                 (resolvable? %)
-                 [(first %)
-                  (-> % with-parent-key wrap-resolvable)]
-                 ;;
-                 :else %)
-              schema)))
+  (postwalk (fn [v]
+              (cond
+                (resolvable? v)
+                [(first v)
+                 (wrap-resolvable (second v)
+                                  :schema      schema
+                                  :endpoint-id (first v))]
+                ;;
+                :else v))
+            schema))
 
 ;;; --------------------------------------------------------------------------------
 
