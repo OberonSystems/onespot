@@ -380,10 +380,8 @@
 ;;; --------------------------------------------------------------------------------
 
 (defn clj->endpoint
-  [gql-args
-   gql-returns
-   ;;
-   [clj-name end-point]]
+  [gql-args gql-returns [clj-name end-point]]
+  ;;
   [(clj-name->gql-name clj-name)
    (hash-map* {:type (-> end-point :type gql-returns :gql-type)}
               :args  (->> gql-args
@@ -402,16 +400,16 @@
         get-attr-ids   (fn [entity-id]
                          (os/rec-attr-ids entity-id :readonly? true))
         out-entity-ids (os/walk-entities (->> gql-returns
-                                               (map second)
-                                               (map :entity-id)
-                                               (filter os/registered?)
-                                               distinct)
-                                          :readonly? true)
+                                              (map second)
+                                              (map :entity-id)
+                                              (filter os/registered?)
+                                              distinct)
+                                         :readonly? true)
         in-entity-ids  (os/walk-entities (->> gql-args
-                                               (mapcat second)
-                                               (map :entity-id)
-                                               (filter os/registered?)
-                                               distinct))
+                                              (mapcat second)
+                                              (map :entity-id)
+                                              (filter os/registered?)
+                                              distinct))
         ;;
         out-objects   (some->> out-entity-ids
                                (filter os/rec?)
