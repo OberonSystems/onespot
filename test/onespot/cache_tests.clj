@@ -1,22 +1,42 @@
 (ns onespot.cache-tests
   (:require [clojure.test :refer [deftest testing is run-tests]])
-  (:require [onespot.cache :as c]
-            [onespot.core  :as osc]
+  (:require [onespot.cache :as cc]
+            [onespot.core  :as os]
             [onespot.common :refer :all]
             :reload))
 
 (deftest test-cache-1
-  (osc/clear!)
+  (os/clear!)
 
-  (is (c/cache-empty?))
+  (is (cc/cache-empty?))
   (register-scalars!)
-  (is (c/cache-empty?))
+  (is (cc/cache-empty?))
 
-  (is (= (c/push :just-my-stuff :test) :test))
-  (is (= (c/pull :just-my-stuff)       :test))
+  (is (= (cc/push :just-my-stuff :test) :test))
+  (is (not (cc/cache-empty?)))
+  (is (= (cc/pull :just-my-stuff)       :test))
 
   (register-scalars!)
-  (is (c/cache-empty?))
-  (= (c/pull :just-my-stuff (fn [] :test-this)) :test-this)
+  (is (cc/cache-empty?))
+  (= (cc/pull :just-my-stuff (fn [] :test-this)) :test-this)
   (register-scalars!)
-  (is (c/cache-empty?)))
+  (is (cc/cache-empty?)))
+
+(deftest test-cache-2
+  (cc/clear!)
+  (let [c (atom 0)]
+    (cc/pull :just-my-stuff (fn []
+                              (swap! c inc)
+                              :test-this))
+    (is (= @c 1))
+
+    (cc/pull :just-my-stuff (fn []
+                              (swap! c inc)
+                              :test-this))
+    (is (= @c 1))
+    (cc/pull :just-my-stuff (fn []
+                              (swap! c inc)
+                              :test-this))
+    (is (= @c 1))
+
+    (cc/clear!)))
