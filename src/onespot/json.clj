@@ -129,7 +129,7 @@
                      (get-entity entish))]
      (entity->json entity value)
      ;; We assume the native JSON coercion can handle it.
-     [entish value]))
+     value))
   ([m]
    (->> m
         (map (fn [[k v]]
