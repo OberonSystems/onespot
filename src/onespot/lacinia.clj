@@ -1,6 +1,7 @@
 (ns onespot.lacinia
   (:require [clojure.string :as s]
             [clojure.walk :refer [postwalk]]
+            [clojure.pprint :refer [pprint]]
             ;;
             [oberon.utils :refer [nil-when->> map-entry hash-map*]]
             ;;
@@ -9,6 +10,11 @@
             [onespot.cache :as cc]
             [onespot.core  :as os]
             [onespot.json  :as js]))
+
+;;; --------------------------------------------------------------------------------
+
+(defonce ^:private tmp      (atom nil))
+(defn-   ^:private set-tmp! [value] (swap! tmp (constantly value)))
 
 ;;; --------------------------------------------------------------------------------
 
@@ -28,8 +34,6 @@
 (defn entity-id
   [entity-id]
   (-> entity-id os/canonical-entity-id os/pull ::entity-id))
-
-;;; --------------------------------------------------------------------------------
 
 ;;; --------------------------------------------------------------------------------
 
@@ -489,7 +493,9 @@
                                                    (and (map? v)
                                                         (contains? v :type))))
                      (map (fn [[k v]]
-                            [k (-> (return-type->field-ref v)
+                            [k (-> v
+                                   :type
+                                   return-type->field-ref
                                    (select-keys [:entity-id :many? :optional?]))]))
                      (into {}))]
     (->> (concat (keys args) (keys returns))
@@ -514,8 +520,8 @@
 (defn core->lacinia
   [value schema endpoint-id]
   (let [{:keys [entity-id many? optional?]} (-> (cc/pull ::->lacinia-map #(make->lacinia-map schema))
-                                      (get endpoint-id)
-                                      :return-type)
+                                                (get endpoint-id)
+                                                :return-type)
         ->lacinia (fn [v]
                     (-> (js/->json entity-id v)
                         ->lacinia-keys))]
@@ -523,3 +529,21 @@
       (or (some->> value (mapv ->lacinia))
           (if optional? nil []))
       (->lacinia value))))
+
+;;;
+
+(defn wrap-convert-gql
+  [{:keys [resolve] :as record} & {:keys [schema endpoint-id debug?]}]
+  (assoc record
+         :resolve (fn [context args value]
+                    (when debug?
+                      (println 'wrap-convert-gql-args endpoint-id)
+                      (pprint args))
+                    (let [args   (-> args
+                                     ->core-keys
+                                     (args->core schema endpoint-id))
+                          _      (when debug? (pprint args))
+                          result (resolve context args value)]
+                      (when debug?
+                        (pprint result))
+                      (core->lacinia result schema endpoint-id)))))
