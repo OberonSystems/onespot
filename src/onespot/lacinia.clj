@@ -476,22 +476,50 @@
 
 ;;; --------------------------------------------------------------------------------
 
-(defn make-arg-keys->entity-ids-map
+(defn make->lacinia-map
   [schema]
-  (->> (compute-gql-args schema)
-       (map (fn [[op-key arg-defs]]
-              [op-key
-               (->> arg-defs
-                    (map (juxt :clj-arg-id :entity-id))
-                    (into {}))]))
-       (into {})))
+  (let [args    (->> (compute-gql-args schema)
+                     (map (fn [[op-key arg-defs]]
+                            [op-key
+                             (->> arg-defs
+                                  (map (juxt :clj-arg-id :entity-id))
+                                  (into {}))]))
+                     (into {}))
+        returns (->> (extract-map-entries schema (fn [[k v]]
+                                                   (and (map? v)
+                                                        (contains? v :type))))
+                     (map (fn [[k v]]
+                            [k (-> (return-type->field-ref v)
+                                   (select-keys [:entity-id :many? :optional?]))]))
+                     (into {}))]
+    (->> (concat (keys args) (keys returns))
+         distinct
+         (map (fn [k]
+                [k {:arg-types   (k args)
+                    :return-type (k returns)}]))
+         (into {}))))
 
 (defn args->core
   "Converts Lacinia args to core values."
   [record schema endpoint-id]
-  (let [entity-id-lookup (-> (cc/pull ::arg-keys->entity-ids #(make-arg-keys->entity-ids-map schema))
-                             (get endpoint-id {}))]
+  (let [entity-id-lookup (or (-> (cc/pull ::->lacinia-map #(make->lacinia-map schema))
+                                 (get endpoint-id)
+                                 :arg-types)
+                             {})]
     (->> record
          (map (fn [[k v]]
                 [k (js/->core (entity-id-lookup k k) v)]))
          (into {}))))
+
+(defn core->lacinia
+  [value schema endpoint-id]
+  (let [{:keys [entity-id many? optional?]} (-> (cc/pull ::->lacinia-map #(make->lacinia-map schema))
+                                      (get endpoint-id)
+                                      :return-type)
+        ->lacinia (fn [v]
+                    (-> (js/->json entity-id v)
+                        ->lacinia-keys))]
+    (if many?
+      (or (some->> value (mapv ->lacinia))
+          (if optional? nil []))
+      (->lacinia value))))

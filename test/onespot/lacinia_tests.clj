@@ -269,11 +269,15 @@
   (let [schema {:queries {:query-1 {:type :boolean
                                     :args {:bob-the-person :person}}}}
         gql-schema (lc/schema->gql schema)
-        arg-map    (lc/schema->arg-entity-map schema)
+        q1         (get-in gql-schema [:queries :query1 :args])
         ;;
-        q1 (get-in gql-schema [:queries :query1 :args])]
+        lacinia-map (lc/make->lacinia-map schema)]
     (is (= q1 '{:bobThePerson {:type (non-null :PersonIn)}}))
-    (is (= arg-map {:query-1 {:bob-the-person :person}}))
+
+    (is (= lacinia-map
+           {:query-1 {:arg-types   {:bob-the-person :person}
+                      :return-type {:entity-id :boolean
+                                    :many?     false}}}))
 
     (is (= (-> {:bob-the-person {:personId   3
                                  :givenName  "given-name"
@@ -288,4 +292,7 @@
                              :family-name "family-name"
                              :shirt-size  :sm
                              :dob         (LocalDate/parse "2022-01-01")
-                             :active?     true}}))))
+                             :active?     true}}))
+
+    (is (= (lc/core->lacinia true schema :query-1)
+           true))))
