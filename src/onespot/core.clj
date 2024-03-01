@@ -336,6 +336,10 @@
   [entity-id]
   (-> entity-id rec :identity-ids))
 
+(defn rec-optional-ids
+  [entity-id]
+  (-> entity-id rec :optional-ids))
+
 (defn rec-identity-attrs
   [entity-id]
   (->> (rec-identity-ids entity-id)
