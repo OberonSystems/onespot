@@ -247,12 +247,16 @@
                         {:entity-id entity-id :unregistered unregistered}))))
 
     (when-not (subset? identity-set attr-set)
-      (throw (ex-info (format "Cannot register record `%s` as Identity Keys are not a subset of Attribute Keys." entity-id)
+      (throw (ex-info (format "Cannot register record `%s` as identity-ids is not a subset of attr-ids." entity-id)
                       {:entity-id entity-id :identity-ids identity-ids :attr-ids attr-ids})))
 
-    (when-not (subset? optional-set attr-set)
-      (throw (ex-info (format "Cannot register record `%s` as Optional Keys are not a subset of Attribute Keys." entity-id)
-                      {:entity-id entity-id :optional-ids optional-ids :attr-ids attr-ids})))
+    (when-not (subset? optional-set (union attr-set readonly-set))
+      (throw (ex-info (format "Cannot register record `%s` as optional-ids is not a subset of attr-ids and readonly-ids." entity-id)
+                      {:entity-id    entity-id
+                       :attr-ids     attr-ids
+                       :readonly-ids readonly-ids
+                       :optional-ids optional-ids
+                       :unregistered (difference optional-set attr-set readonly-set)})))
 
     (when-let [optional-identity-ids (-> (intersection optional-set identity-set)
                                          (nil-when-> empty?))]
@@ -262,7 +266,7 @@
     ;; Readonly Checks
     (when-not (every? attr? readonly-ids)
       (let [unregistered (->> readonly-ids (remove attr?) set)]
-        (throw (ex-info (format "Cannot register record `%s` with unregistered readonly attributes: %s." entity-id unregistered)
+        (throw (ex-info (format "Cannot register record `%s` with unregistered readonly-ids: %s." entity-id unregistered)
                         {:entity-id entity-id :unregistered unregistered}))))
 
     (when-let [readonly-identity-ids (-> (intersection readonly-set attr-set)
