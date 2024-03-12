@@ -49,7 +49,7 @@
 
 (defn get-table
   [entity-id]
-  (or (-> (os/rec entity-id) ::info ::table)
+  (or (-> (os/rec entity-id) ::info :table)
       (throw (ex-info (format "Failed to get DB Table for %s" entity-id)
                       {:entity-id entity-id}))))
 
@@ -203,7 +203,7 @@
 ;;;
 
 (defmulti entity->db (fn [{::keys [info] :as entity} v]
-                       (or (::type info) ::clj->db)))
+                       (or (:type info) ::clj->db)))
 
 (defmethod entity->db ::clj->db
   [entity v]
@@ -214,9 +214,8 @@
   (name v))
 
 (defmethod entity->db ::enum
-  [{{::keys [enum-type]} ::info
-    ::keys [entity-id] :as entity} v]
-  (make-enum (or enum-type
+  [{::keys [entity-id info] :as entity} v]
+  (make-enum (or (:enum-type info)
                  entity-id
                  (os/entity-id entity))
              v))
@@ -276,7 +275,7 @@
 ;;; --------------------------------------------------------------------------------
 
 (defmulti db->entity (fn [{::keys [info] :as entity} v]
-                       (::type info)))
+                       (:type info)))
 
 (defmethod db->entity :default
   [entity v]

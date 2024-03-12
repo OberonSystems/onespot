@@ -36,7 +36,7 @@
 (defn- kind-dispatcher
   [entity value]
   (let [os-entity-id (os/entity-id entity)]
-    (or (-> entity ::info ::type)
+    (or (-> entity ::info :type)
         (when (and (os/scalar? os-entity-id)
                    (os/enum?   os-entity-id))
           ::enum)
