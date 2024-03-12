@@ -112,4 +112,4 @@
         [:person-id :given-name]
         :identity-ids [:person-id]
         :description "Core Description"
-        ::lc/description "Lacinia Description"))
+        ::lc/info {:description "Lacinia Description"}))
