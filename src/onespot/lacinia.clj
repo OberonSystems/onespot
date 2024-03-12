@@ -35,6 +35,11 @@
   [entity-id]
   (-> entity-id os/canonical-entity-id os/pull ::entity-id))
 
+(defn get-gql-type
+  [entity]
+  (or (-> entity ::info :type)
+      (:entity-id entity)))
+
 ;;; --------------------------------------------------------------------------------
 
 (def +native-map+
@@ -105,29 +110,28 @@
                ;;
                (vector? info)  {:type (first info) :many? true}
                ;;
-               (and (map? info)
-                    (contains? info :type)
+               (and info-type?
                     (-> info :type vector?)
                     (-> info :type first keyword?))
                {:type (-> info :type first) :many? true}
                ;;
-               (and (map? info)
-                    (contains? info :type)
+               (and info-type?
                     (-> info :type keyword?))
                {:type (-> info :type)}
                ;;
                :else (ex-info (format "Can't convert arg `%s` to a field-ref." arg-id)
                               {:arg-id arg-id :info info}))
         ;;
+        ;; When reading a schema, the type can actually be an entity.
         entity-id (:type info)
         many?     (or (-> info :many?)
                       (when (os/registered? entity-id)
                         (cond
                           (os/series? entity-id) true
                           (os/attr? entity-id)   (-> entity-id
-                                                      os/attr
-                                                      os/attr-entity
-                                                      os/series?)
+                                                     os/attr
+                                                     os/attr-entity
+                                                     os/series?)
                           :else false)))]
     (cond
       (native? entity-id)
@@ -143,8 +147,7 @@
         {:entity-id  entity-id
          :clj-arg-id arg-id
          :gql-arg-id (->camelCaseKeyword arg-id)
-         :gql-type   (->gql-type (or (entity ::gql-type)
-                                     entity-id)
+         :gql-type   (->gql-type (get-gql-type entity)
                                  :in many? optional?)
          :many?      many?
          :optional?  optional?})
@@ -157,8 +160,7 @@
                              (entity ::entity-id)
                              arg-id)
                          ->camelCaseKeyword)
-         :gql-type   (->gql-type (or (entity ::gql-type)
-                                     entity-id)
+         :gql-type   (->gql-type (get-gql-type entity)
                                  :in many? optional?)
          :many?      many?
          :optional?  optional?})
@@ -174,8 +176,7 @@
                               (entity ::entity-id)
                               arg-id)
                           ->camelCaseKeyword)
-         :gql-type    (->gql-type (or (series-entity ::gql-type)
-                                      (series-entity :entity-id))
+         :gql-type    (->gql-type (get-gql-type series-entity)
                                   :in many? optional?)
          :many?     many?
          :optional? optional?})
@@ -191,8 +192,7 @@
                               (entity ::entity-id)
                               arg-id)
                           ->camelCaseKeyword)
-         :gql-type    (->gql-type (or (attr-entity ::gql-type)
-                                      (attr-entity :entity-id))
+         :gql-type    (->gql-type (get-gql-type attr-entity)
                                   :in many? optional?)})
       ;;
       :else (throw (ex-info (format "Can't convert arg-id `%s` to a field-ref." arg-id)
@@ -267,16 +267,14 @@
       (os/scalar? entity-id)
       (let [entity (os/scalar entity-id)]
         {:entity-id entity-id
-         :gql-type  (->gql-type (or (::gql-type entity)
-                                    entity-id)
+         :gql-type  (->gql-type (get-gql-type entity)
                                 :out many? optional?)
          :many?     many?})
       ;;
       (os/rec? entity-id)
       (let [entity (os/rec entity-id)]
         {:entity-id entity-id
-         :gql-type  (->gql-type (or (::gql-type entity)
-                                    entity-id)
+         :gql-type  (->gql-type (get-gql-type entity)
                                 :out many? optional?)
          :many?    many?})
       ;;
@@ -316,21 +314,18 @@
   (cond
     (os/scalar? entity-id)
     (let [entity (os/scalar entity-id)]
-      {:type (->gql-type (or (::gql-type entity)
-                             (:entity-id entity))
+      {:type (->gql-type (get-gql-type entity)
                          nil false optional?)})
     ;;
     (os/rec? entity-id)
     (let [entity (os/rec entity-id)]
-      {:type (->gql-type (or (::gql-type entity)
-                             (:entity-id entity))
+      {:type (->gql-type (get-gql-type entity)
                          in-out false optional?)})
     ;;
     (os/series? entity-id)
     (let [entity        (os/series entity-id)
           series-entity (os/series-entity entity)]
-      {:type (->gql-type (or (::gql-type series-entity)
-                             (:entity-id series-entity))
+      {:type (->gql-type (get-gql-type series-entity)
                          in-out true optional?)})
     ;;
     :else (throw (ex-info (format "Can't convert entity `%s` to a field-ref." entity-id)
