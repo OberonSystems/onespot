@@ -532,6 +532,11 @@
 
 ;;;
 
+(defn resolved-value?
+  [value]
+  (and (map? value)
+       (contains? value :resolved-value)))
+
 (defn wrap-convert-gql
   [{:keys [resolve] :as record} & {:keys [schema endpoint-id debug?]}]
   (assoc record
@@ -544,6 +549,7 @@
                                      (args->core schema endpoint-id))
                           _      (when debug? (pprint args))
                           result (resolve context args value)]
-                      (when debug?
-                        (pprint result))
-                      (core->lacinia result schema endpoint-id)))))
+                      (when debug? (pprint result))
+                      (if (resolved-value? result)
+                        result
+                        (core->lacinia result schema endpoint-id))))))
