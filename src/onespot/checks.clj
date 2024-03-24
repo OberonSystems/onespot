@@ -1,4 +1,29 @@
-(ns onespot.checks)
+(ns onespot.checks
+  (:require [clojure.string :as s]
+            [onespot.core :as os]
+            [onespot.honeysql :refer [entity-absent? entity-present?]]))
+
+(defn format-entity-identity
+  [entity-id entity]
+  (str entity-id "{"
+       (->> (os/rec-identity-ids entity-id)
+            (map (fn [k] (str k ":" (-> (get entity k) #_(coerce :string)))))
+            (s/join " "))
+       "}"))
+
+(defn check-present
+  [entity-id record]
+  (when (entity-absent? entity-id record)
+    (format "%s %s must be present."
+            entity-id (format-entity-identity entity-id record))))
+
+(defn check-absent
+  [entity-id record]
+  (when (entity-present? entity-id record)
+    (format "%s %s must be absent."
+            entity-id (format-entity-identity entity-id record))))
+
+;;;
 
 (defn command-type-dispatcher
   [{:keys [command-type] :as command}]
