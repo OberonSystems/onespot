@@ -290,6 +290,12 @@
        (filter #(-> % first attr?))
        (map second)))
 
+(defn recs
+  []
+  (->> @+registry+
+       (filter #(-> % first rec?))
+       (map second)))
+
 (defn make-core-key->ns-key
   [ns-entity-id]
   (->> (attrs)
