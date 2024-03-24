@@ -245,14 +245,17 @@
      :message (format "Value `%s` must be a set not `%s`" x (type x))
      :value   x}))
 
-#_
-(defn edn-map?
+;;;
+
+(defn edn-map
   [x]
   ;; FIXME: see if we can check for a `readable` map, ie references to
   ;; functions can't be read, if they are in the map then it's not an
   ;; ednable map.
-  (map? x))
-
+  (when-not (map? x)
+    {:code    :bad-type
+     :message (format "Value `%s` must be a map not `%s`" x (type x))
+     :value   x}))
 
 #_
 (defn year?

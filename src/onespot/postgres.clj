@@ -1,6 +1,7 @@
 (ns onespot.postgres
   (:require [clojure.string :as s]
             [clojure.core.memoize :as m]
+            [clojure.edn :as edn]
             ;;
             [taoensso.timbre :as log]
             ;;
@@ -202,14 +203,18 @@
 
 ;;;
 
-(defmulti entity->db (fn [{::keys [info] :as entity} v]
-                       (or (:type info) ::clj->db)))
+(defmulti entity->db (fn [{:keys [entity-id] ::keys [info] :as entity} v]
+                       (or (:type info) entity-id)))
 
-(defmethod entity->db ::clj->db
+(defmethod entity->db :default
   [entity v]
   (clj->db v))
 
-(defmethod entity->db ::keyword
+(defmethod entity->db ::os/edn-map
+  [entity v]
+  (some-> v pr-str))
+
+(defmethod entity->db ::os/keyword
   [entity v]
   (name v))
 
@@ -274,16 +279,20 @@
 
 ;;; --------------------------------------------------------------------------------
 
-(defmulti db->entity (fn [{::keys [info] :as entity} v]
-                       (:type info)))
+(defmulti db->entity (fn [{:keys [entity-id] ::keys [info] :as entity} v]
+                       (or (:type info) entity-id)))
 
 (defmethod db->entity :default
   [entity v]
   v)
 
-(defmethod db->entity ::keyword
+(defmethod db->entity ::os/keyword
   [entity v]
   (keyword v))
+
+(defmethod db->entity ::os/edn-map
+  [entity v]
+  (when v (edn/read-string v)))
 
 (defmethod db->entity ::enum
   [entity v]
