@@ -1,10 +1,7 @@
 (ns onespot.validators
   (:require [clojure.string :as s]
             ;;
-            [onespot.core :as osc]
-            ;;
-            #_[clojure.set    :refer [rename-keys]]
-            #_[clojure.pprint :refer [pprint]])
+            [onespot.core :as os])
   (:import [java.time Instant LocalDate]))
 
 (defn non-blank-string?
@@ -233,7 +230,7 @@
 
 (defn make-enum-one-of
   [enums & {:keys [message-fn]}]
-  (let [values (->> (osc/canonicalise-enums enums)
+  (let [values (->> (os/canonicalise-enums enums)
                     (map :value)
                     set)]
     #(one-of % values :message-fn message-fn)))

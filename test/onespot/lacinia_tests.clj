@@ -2,8 +2,8 @@
   (:require [clojure.pprint :refer [pprint]]
             [clojure.test :refer [deftest testing is run-tests]]
             [clojure.data :refer [diff]])
-  (:require [onespot.core :refer :all :as os]
-            [onespot.json :as js]
+  (:require [onespot.core    :as os :refer :all]
+            [onespot.json    :as js]
             [onespot.lacinia :as lc]
             ;;
             [onespot.common :refer :all]

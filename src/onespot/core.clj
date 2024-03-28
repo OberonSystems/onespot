@@ -4,7 +4,7 @@
             ;;
             [oberon.utils :refer [nil-when-> hash-map* capitalize-keyword]]
             ;;
-            [onespot.cache :as c]))
+            [onespot.cache :as cc]))
 
 ;;;
 
@@ -12,7 +12,7 @@
 
 (defn clear!
   []
-  (c/clear!)
+  (cc/clear!)
   (swap! +registry+ (constantly {})))
 
 (defn registered?
@@ -82,7 +82,7 @@
   [entity-id kind m]
   (when-not (+kinds+ kind)
     (throw (ex-info (format "Cannot register unknown kind: `%s`." kind) {:kind kind})))
-  (c/clear!)
+  (cc/clear!)
   (swap! +registry+ #(assoc % entity-id (assoc m :kind kind)))
   entity-id)
 

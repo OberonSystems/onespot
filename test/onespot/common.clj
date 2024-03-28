@@ -1,10 +1,10 @@
 (ns onespot.common
   (:require [clojure.test :refer [deftest testing is run-tests]])
-  (:require [onespot.core :refer :all :as osc]
+  (:require [onespot.core :refer :all :as os]
             [onespot.validators :refer :all]
             [onespot.lacinia  :as lc]
             [onespot.json     :as js]
-            [onespot.entities :as ose]
+            [onespot.entities :as oe]
             :reload))
 
 (def +shirt-size-enums+
@@ -26,7 +26,7 @@
 (defn register-scalars!
   []
   (clear!)
-  (ose/register-common!)
+  (oe/register-common!)
   (scalar! :string1 non-blank-string)
   (scalar! :string2 non-blank-string
            :label       "My Label"
@@ -42,20 +42,20 @@
 (defn register-attrs!
   []
   (register-scalars!)
-  (attr! :person-id   ::osc/positive-integer)
-  (attr! :given-name  ::osc/string ::js/entity-id :theGivenName)
-  (attr! :nickname    ::osc/string)
-  (attr! :family-name ::osc/string
+  (attr! :person-id   ::os/positive-integer)
+  (attr! :given-name  ::os/string ::js/entity-id :theGivenName)
+  (attr! :nickname    ::os/string)
+  (attr! :family-name ::os/string
          :label "The Family Name")
   ;;
-  (attr! :day ::osc/local-date)
-  (attr! :dob ::osc/local-date)
-  (attr! :now ::osc/instant)
+  (attr! :day ::os/local-date)
+  (attr! :dob ::os/local-date)
+  (attr! :now ::os/instant)
   ;;
   (attr! :contact-type  :contact-type-enum)
-  (attr! :contact-value ::osc/string)
+  (attr! :contact-value ::os/string)
 
-  (attr! :active?        ::osc/boolean
+  (attr! :active?        ::os/boolean
          ::lc/entity-id :isActive
          ::js/entity-id :isActive)
 
@@ -83,7 +83,7 @@
         :optional-ids [:dob])
 
   (rec! :new-person
-        (osc/rec-value-ids :person))
+        (os/rec-value-ids :person))
 
   (series! :people :person)
 

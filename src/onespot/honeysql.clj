@@ -4,8 +4,8 @@
             [honey.sql         :as hsql]
             [honey.sql.helpers :as h]
             ;;
-            [onespot.core     :as osc]
-            [onespot.postgres :as db]))
+            [onespot.core     :as os]
+            [onespot.postgres :as pg]))
 
 ;;; --------------------------------------------------------------------------------
 
@@ -20,7 +20,7 @@
     (when debug?
       (println sql)
       (println params))
-    (db/execute query)))
+    (pg/execute query)))
 
 ;;; --------------------------------------------------------------------------------
 ;;  Honeysql Helpers
@@ -124,8 +124,8 @@
 
 (defn entity-present?
   [entity-id record & {:keys [matching debug?]}]
-  (let [table    (db/get-table entity-id)
-        matching (merge (osc/rec-identity entity-id record)
+  (let [table    (pg/get-table entity-id)
+        matching (merge (os/rec-identity entity-id record)
                         matching)]
     (one table matching :debug? debug?)))
 
