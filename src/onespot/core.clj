@@ -382,11 +382,30 @@
       (nil-when-> empty?)))
 
 (defn rec-identity
-  [entity-id m]
-  (-> (select-keys m (rec-identity-ids entity-id))
-      (nil-when-> empty?)))
+  [entity-id m & {:keys [throw?] :or {throw? true}}]
+  (let [identity-ids (rec-identity-ids entity-id)
+        result       (-> (select-keys m identity-ids)
+                         (nil-when-> empty?))]
+    (when (and throw? (some #(-> (get result %) nil?)
+                            identity-ids))
+      (throw (ex-info (format "Failed to extract identity for %s, missing values." entity-id)
+                      {:entity-id    entity-id
+                       :identity-ids identity-ids
+                       :m            m})))
+    result))
 
 (defn rec-values
+  [entity-id m & {:keys [throw?]}]
+  (let [value-ids (rec-value-ids entity-id)
+        result    (-> (select-keys m value-ids)
+                      (nil-when-> empty?))]
+    (when (and throw? value-ids (nil? result))
+      (throw (ex-info (format "Failed to extract values for %s" entity-id)
+                      {:entity-id entity-id
+                       :value-ids value-ids
+                       :m         m})))
+    result))
+
   [entity-id m]
   (-> (select-keys m (rec-value-ids entity-id))
       (nil-when-> empty?)))
