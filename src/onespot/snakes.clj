@@ -19,6 +19,12 @@
 (def ->kebab-case-keyword
   (m/fifo csk/->kebab-case-keyword {} :fifo/threshold 1024))
 
+(def ->snake_case_keyword
+  (m/fifo csk/->snake_case_keyword {} :fifo/threshold 1024))
+
+(def ->snake_case_string
+  (m/fifo csk/->snake_case_string {} :fifo/threshold 1024))
+
 (def ->PascalCaseKeyword
   (m/fifo csk/->PascalCaseKeyword {} :fifo/threshold 1024))
 
@@ -44,4 +50,11 @@
   (cske/transform-keys (fn [k]
                          (-> (or (get rename-map k) k)
                              ->camelCaseKeyword))
+                       m))
+
+(defn keys->snake-case-strings
+  [m & {:keys [rename-map]}]
+  (cske/transform-keys (fn [k]
+                         (-> (or (get rename-map k) k)
+                             ->snake_case_string))
                        m))
