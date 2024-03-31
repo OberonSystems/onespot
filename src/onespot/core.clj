@@ -302,7 +302,10 @@
        (map (fn [attr]
               (let [entity-id    (entity-id    attr)
                     ns-entity-id (ns-entity-id attr)]
-                (when-not (= entity-id ns-entity-id)
+                (when (and entity-id
+                           ns-entity-id
+                           (not= entity-id
+                                 ns-entity-id))
                   [entity-id ns-entity-id]))))
        (into {})))
 
@@ -312,7 +315,10 @@
        (map (fn [attr]
               (let [entity-id    (entity-id    attr)
                     ns-entity-id (ns-entity-id attr)]
-                (when-not (= entity-id ns-entity-id)
+                (when (and entity-id
+                           ns-entity-id
+                           (not= entity-id
+                                 ns-entity-id))
                   [ns-entity-id entity-id]))))
        (into {})))
 
