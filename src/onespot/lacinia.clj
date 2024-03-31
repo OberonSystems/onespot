@@ -3,7 +3,7 @@
             [clojure.walk :refer [postwalk]]
             [clojure.pprint :refer [pprint]]
             ;;
-            [oberon.utils :refer [nil-when->> map-entry hash-map*]]
+            [oberon.utils :refer [nil-when-> nil-when->> map-entry hash-map*]]
             ;;
             [onespot.snakes :refer [->kebab-case-keyword ->PascalCaseKeyword ->camelCaseKeyword ->SCREAMING_SNAKE_CASE_KEYWORD
                                     keys->camel-case keys->kebab-case]]
@@ -436,11 +436,11 @@
                         (->> endpoints
                              (map #(clj->endpoint gql-args gql-returns %))
                              (into {})))]
-    {:enums         enums
-     :objects       out-objects
-     :input-objects in-objects
-     :queries       (some-> schema :queries   ->endpoints)
-     :mutations     (some-> schema :mutations ->endpoints)}))
+    (hash-map* :enums         enums
+               :objects       out-objects
+               :input-objects in-objects
+               :queries       (some-> schema :queries   (nil-when-> empty?) ->endpoints)
+               :mutations     (some-> schema :mutations (nil-when-> empty?) ->endpoints))))
 
 ;;; --------------------------------------------------------------------------------
 
