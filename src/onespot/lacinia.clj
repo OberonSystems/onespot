@@ -545,6 +545,7 @@
                       (println 'wrap-convert-gql-args endpoint-id)
                       (pprint args))
                     (let [args   (-> args
+                                     keys->kebab-case
                                      ->core-keys
                                      (args->core schema endpoint-id))
                           _      (when debug? (pprint args))
