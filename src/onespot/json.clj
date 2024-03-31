@@ -2,9 +2,6 @@
   (:require [clojure.string :as s]
             [clojure.core.memoize :as m]
             ;;
-            [camel-snake-kebab.core :as csk]
-            [camel-snake-kebab.extras :as cske]
-            ;;
             [oberon.utils :refer [map-entry]]
             ;;
             [onespot.snakes :refer [->SCREAMING_SNAKE_CASE_STRING ->kebab-case-keyword ->kebab-case-string
