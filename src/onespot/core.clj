@@ -422,14 +422,7 @@
   "Walks the entities and visits all referenced entities, returning a
   distinct set.
 
-  Avoids recursion by tracking previously visited entity-ids.
-
-  By default walks all :attr-ids but call can pass a get-attr-ids
-  function to change the attr-ids to be walked.
-
-  For example the caller may choose to add an additional list of
-  attr-ids that they have added to the rec.  The Lacinia module does
-  this to include output-ids when generating the GQL Schema."
+  Avoids recursion by tracking previously visited entity-ids."
   [entity-id-queue & {:keys [readonly?]}]
   (loop [queue   (if (keyword? entity-id-queue)
                    [entity-id-queue]
