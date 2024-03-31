@@ -354,14 +354,15 @@
        (map (fn [[k v]]
               (let [entity-id (get attr-map k k)]
                 (cond
-                  (os/attr? entity-id)
+                  (and (os/registered? entity-id)
+                       (os/attr?       entity-id))
                   (let [attr        (os/attr entity-id)
                         attr-entity (os/attr-entity attr)]
                     [entity-id
                      (some->> v (db->entity attr-entity))])
                   ;;
                   :else [entity-id
-                         (some->> v (db->entity (os/pull entity-id)))]))))
+                         (some->> v db->clj)]))))
        (into {})))
 
 ;;; --------------------------------------------------------------------------------
