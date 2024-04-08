@@ -145,3 +145,8 @@
       (validate-entity entity value [])
       (when-not (empty? @*feedback*)
         @*feedback*))))
+
+(defn valid?
+  [entish value]
+  (-> (validate entish value)
+      nil?))
