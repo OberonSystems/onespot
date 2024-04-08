@@ -414,10 +414,6 @@
                        :m         m})))
     result))
 
-  [entity-id m]
-  (-> (select-keys m (rec-value-ids entity-id))
-      (nil-when-> empty?)))
-
 ;;; --------------------------------------------------------------------------------
 
 (defn walk-entities
