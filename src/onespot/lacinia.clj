@@ -530,6 +530,10 @@
           (if optional? nil []))
       (->lacinia value))))
 
+(defn json->lacinia-json
+  [json]
+  (-> json keys->kebab-case ->core-keys))
+
 ;;;
 
 (defn resolved-value?
@@ -545,8 +549,7 @@
                       (println 'wrap-convert-gql-args endpoint-id)
                       (pprint args))
                     (let [args   (-> args
-                                     keys->kebab-case
-                                     ->core-keys
+                                     json->lacinia-json
                                      (args->core schema endpoint-id))
                           _      (when debug? (pprint args))
                           result (resolve context args value)]
