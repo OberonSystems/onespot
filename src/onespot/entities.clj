@@ -72,6 +72,25 @@
 
   (os/scalar! ::os/edn-map vl/edn-map))
 
+(defn register-date-ranges!
+  []
+  (os/attr! :date-from ::os/local-date)
+  (os/attr! :date-to   ::os/local-date)
+
+  (os/rec!  ::os/date-range [:date-from :date-to]
+            ;;
+            :validator (vl/make-date-range-validator :from? true :to? true)
+            ::pg/info  {:type ::pg/date-range})
+
+  (os/rec!  ::os/date-range-from [:date-from :date-to]
+            ;;
+            :validator (vl/make-date-range-validator :from? true :to? false)
+            ::pg/info  {:type ::pg/date-range})
+
+  (os/rec!  ::os/date-range-to [:date-from :date-to]
+            ;;
+            :validator (vl/make-date-range-validator :from? false :to? true)
+            ::pg/info  {:type ::pg/date-range}))
 
 (defn make-enum!
   [entity-id enums & {:keys [enum-type validator] :as options}]

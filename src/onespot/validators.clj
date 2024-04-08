@@ -200,21 +200,23 @@
      :message "Must be an instant"
      :value   x}))
 
-(defn date-range
-  [[start end & _ :as x]]
-  (let [message (cond
-                  (not (vector? x))     "A date-range must be a vector."
-                  (not (= (count x) 2)) "A date-range must be a vector with two elements."
-                  ;;
-                  (not (or (nil? start) (local-date? start))) (format "Start Date `%s` must be nil or a local-date.")
-                  (not (or (nil? end)   (local-date? end)))   (format "End Date `%s` must be nil or a local-date.")
-                  ;;
-                  (and start end (not (< start end)))
-                  "The Start Date must be less than the End Date.")]
-    (when message
-      {:code    :bad-value
-       :message message
-       :value   x})))
+(defn make-date-range-validator
+  [& {:keys [from? to?]}]
+  (fn [{:keys [date-from date-to] :as x}]
+    (let [message (cond
+                    (when (and from? (nil? date-from))              "The `date-from` is required.")
+                    (when (and from? (not (local-date? date-from))) (format "The `date-from: %s` must a local-date." date-from))
+                    ;;
+                    (when (and to? (nil? date-to))                  "The `to-date` is required.")
+                    (when (and to? (not (local-date? date-to)))     (format "The `date-to: %s` must a local-date." date-to))
+                    ;;
+                    (and date-to date-to (not (< date-from date-to)))
+                    (format "The `date-from: %s` must be less than the `date-to: %s`."
+                            date-from date-to))]
+      (when message
+        {:code    :bad-value
+         :message message
+         :value   x}))))
 
 ;;;
 

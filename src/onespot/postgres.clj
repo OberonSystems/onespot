@@ -140,6 +140,8 @@
 
 (defn make-daterange
   [[from to]]
+  ;; Assumes that from to are inclusive, so we use [], postgres
+  ;; defaults to [).
   (make-pg-object :daterange
                   (str "["
                        (some-> from ld->yyyy-mm-dd)
@@ -152,11 +154,14 @@
   ;; "[2023-11-06,2023-11-28)"
   ;; "[2023-11-06,)"
   ;; "[,2023-11-28)"
+  ;;
+  ;; We convert back to [] which is the inverse of the make-daterange
+  ;; function.
   (let [[from to] (-> pgobj
                       get-pg-value
                       (s/split #","))
         from (some->> from (drop 1) seq (apply str) yyyy-mm-dd->ld)
-        to   (some-> (some->> to   butlast  seq (apply str) yyyy-mm-dd->ld)
+        to   (some-> (some->> to butlast seq (apply str) yyyy-mm-dd->ld)
                      (.plusDays -1))]
     [from to]))
 
@@ -242,8 +247,8 @@
   (make-pg-array "DATE" (map clj->db v)))
 
 (defmethod entity->db ::date-range
-  [entity v]
-  (make-daterange v))
+  [entity {:keys [date-from date-to]}]
+  (make-daterange [date-from date-to]))
 
 (defmethod entity->db ::instant-array
   [entity v]
@@ -324,10 +329,11 @@
   (->> (.getArray v)
        (map keyword)))
 
-#_
 (defmethod db->entity ::date-range
   [entity v]
-  (make-daterange v))
+  (let [[date-from date-to] v]
+    {:date-from date-from
+     :date-to   date-to}))
 
 (defmethod entity->db ::edn-map
   [entity v]
@@ -379,6 +385,10 @@
 (defmethod read-object :ltree
   [_ v]
   (get-pg-value v))
+
+(defmethod read-object :daterange
+  [_ v]
+  (read-daterange v))
 
 (let [object-reader (fn [object]
                       (read-object (-> object get-pg-type keyword) object))]
