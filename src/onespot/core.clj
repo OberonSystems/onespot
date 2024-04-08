@@ -223,7 +223,8 @@
 
 (defn rec!
   [entity-id attr-ids &
-   {:keys [identity-ids optional-ids readonly-ids] :as info}]
+   {:keys [identity-ids optional-ids readonly-ids
+           validator] :as info}]
   (throw-when-registered :rec entity-id)
   (let [attr-ids     (some-> attr-ids     seq vec)
         identity-ids (some-> identity-ids seq vec)
@@ -280,7 +281,8 @@
                                  :identity-ids identity-ids
                                  :value-ids    value-ids
                                  :optional-set (-> optional-set (nil-when-> empty?))
-                                 :readonly-set (-> readonly-set (nil-when-> empty?))))))
+                                 :readonly-set (-> readonly-set (nil-when-> empty?))
+                                 :validator    validator))))
 
 ;;;
 
