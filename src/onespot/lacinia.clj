@@ -105,7 +105,7 @@
   If info is a map then we base it on the :type field in the map.
   "
   [arg-id {:keys [optional?] :as info}]
-  (let [info-type? (and (map? info) (contains? info :type)) ; Did the type information come from the info?
+  (let [info-type? (and (map? info) (contains? info :type))
         optional?  (boolean optional?)
         ;;
         info (cond
@@ -115,14 +115,18 @@
                ;;
                (vector? info)  {:type (first info) :many? true}
                ;;
-               (and info-type?
+               (and (map? info)
                     (-> info :type vector?)
                     (-> info :type first keyword?))
                {:type (-> info :type first) :many? true}
                ;;
-               (and info-type?
+               (and (map? info)
                     (-> info :type keyword?))
                {:type (-> info :type)}
+               ;;
+               (and (map? info)
+                    (-> info :type nil?))
+               {:type arg-id}
                ;;
                :else (ex-info (format "Can't convert arg `%s` to a field-ref." arg-id)
                               {:arg-id arg-id :info info}))
