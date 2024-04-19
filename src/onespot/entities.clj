@@ -104,7 +104,8 @@
   [token-id & [parent-id]]
   (let [[token-id parent-id] (if parent-id
                                [token-id parent-id]
-                               [(-> (str (name token-id) "-token") keyword)
+                               [(keyword (namespace token-id)
+                                         (str (name token-id) "-token"))
                                 token-id])
         ;;
         entity-ids (os/rec-identity-ids parent-id)]
