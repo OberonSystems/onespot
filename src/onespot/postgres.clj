@@ -85,6 +85,14 @@
 (def +yyyy-mm+    (DateTimeFormatter/ofPattern "yyyy-MM"))
 (def +yyyymmdd+   (DateTimeFormatter/ofPattern "yyyyMMdd"))
 
+(defn ld->local-date-time
+  [^LocalDate ld]
+  (.format ld DateTimeFormatter/ISO_LOCAL_DATE_TIME))
+
+(defn ld->offset-date-time
+  [^LocalDate ld]
+  (.format ld DateTimeFormatter/ISO_OFFSET_DATE_TIME))
+
 (defn ld->yyyy-mm-dd
   [^LocalDate ld]
   (.format ld +yyyy-mm-dd+))
