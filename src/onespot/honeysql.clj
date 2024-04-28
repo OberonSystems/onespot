@@ -50,7 +50,15 @@
    (select* nil prefix colls))
   ([sql prefix colls]
    (->> colls
-        (map #(prefix-keyword prefix %))
+        (map (fn [col]
+               (cond
+                 ;; Handle [:column :as-this-name]
+                 (vector? col) (let [[col as] col]
+                                 [(prefix-keyword prefix col)
+                                  as])
+                 ;; Otherwise we treat it like a keyword and let it
+                 ;; blow up if it isn't a keyword.
+                 :else (prefix-keyword prefix col))))
         (into (if sql [sql] []))
         (apply h/select))))
 
