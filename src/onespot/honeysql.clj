@@ -3,6 +3,7 @@
             ;;
             [honey.sql         :as hsql]
             [honey.sql.helpers :as h]
+            honey.sql.pg-ops
             ;;
             [onespot.core     :as os]
             [onespot.postgres :as pg]))
@@ -34,11 +35,15 @@
 
 ;;; --------------------------------------------------------------------------------
 
-(def <at (keyword "<@"))
-(def at> (keyword "@>"))
+;; (def <at (keyword "<@"))
+;; (def at> (keyword "@>"))
+;; (hsql/register-op! <at)
+;; (hsql/register-op! at>)
 
-(hsql/register-op! <at)
-(hsql/register-op! at>)
+;; FIXME: I'm not sure if this should be here or not, in some cases I
+;; need it for the generated SQL to work, in other cases I don't.  Ie,
+;; rename-tag doesn't want it but in other code it is required
+(hsql/register-op! :any)
 
 ;;; --------------------------------------------------------------------------------
 
