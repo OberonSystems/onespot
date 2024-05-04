@@ -114,7 +114,11 @@
 ;;; --------------------------------------------------------------------------------
 
 (defmulti fetch (fn [kind & [matching & {:as opts}]]
-                  kind))
+                  (or (when-let [entity (and (os/registered? kind)
+                                             (os/pull kind))]
+                        (or (-> entity ::info    :collection)
+                            (-> entity ::pg/info :table)))
+                      kind)))
 
 (defn fetch-all
   [sql debug?]

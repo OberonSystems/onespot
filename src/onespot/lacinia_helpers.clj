@@ -88,12 +88,12 @@
 
 (defn fetch-entity
   [entity-id token & {:keys [matching] :as options}]
-  (hs/one (pg/get-table entity-id)
+  (hs/one entity-id
           (or matching (os/rec-identity entity-id token))
           (assoc options :verbose? true)))
 
 (defn fetch-entities
   [entity-id matching & {:as options}]
-  (hs/fetch (pg/get-table entity-id)
+  (hs/fetch entity-id
             matching
             (assoc options :verbose? true)))
