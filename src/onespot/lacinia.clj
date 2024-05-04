@@ -35,10 +35,16 @@
   [entity-id]
   (-> entity-id os/canonical-entity-id os/pull ::entity-id))
 
-(defn get-type
-  [entity]
-  (or (-> entity ::info :type)
-      (:entity-id entity)))
+(defn gql-entity-id
+  [entity-id]
+  (let [entity (-> entity-id os/canonical-entity-id os/pull)]
+    (or (::entity-id entity) (:entity-id entity))))
+
+(defn get-gql-type
+  [entity-id]
+  (let [entity (-> entity-id os/canonical-entity-id os/pull)]
+    (or (-> entity ::info :type)
+        (:entity-id entity))))
 
 (defn get-description
   [entity]
@@ -70,19 +76,19 @@
   (->camelCaseKeyword clj-name))
 
 (defn ->gql-type
-  [field-type in-out many? optional?]
-
-  (let [gql-type (or (+native-map+ field-type)
-                     (clj-name->gql-type-name field-type in-out))]
+  [entity-id many? optional? & [in-out]]
+  (let [gql-type-name (or (+native-map+ entity-id)
+                          (clj-name->gql-type-name (get-gql-type entity-id)
+                                                   (when (os/rec? entity-id) in-out)))]
     (cond
       many? (let [term (list 'list
-                             (list 'non-null gql-type))]
+                             (list 'non-null gql-type-name))]
               (if optional?
                 term
                 (list 'non-null term)))
       :else (if optional?
-              gql-type
-              (list 'non-null gql-type)))))
+              gql-type-name
+              (list 'non-null gql-type-name)))))
 
 ;;; --------------------------------------------------------------------------------
 
@@ -147,7 +153,7 @@
       {:entity-id  entity-id
        :clj-arg-id arg-id
        :gql-arg-id (->camelCaseKeyword arg-id)
-       :gql-type   (->gql-type entity-id :in many? optional?)
+       :gql-type   (->gql-type entity-id many? optional?)
        :many?      many?
        :optional?  optional?}
       ;;
@@ -156,8 +162,7 @@
         {:entity-id  entity-id
          :clj-arg-id arg-id
          :gql-arg-id (->camelCaseKeyword arg-id)
-         :gql-type   (->gql-type (get-type entity)
-                                 :in many? optional?)
+         :gql-type   (->gql-type entity many? optional?)
          :many?      many?
          :optional?  optional?})
       ;;
@@ -169,8 +174,7 @@
                              (entity ::entity-id)
                              arg-id)
                          ->camelCaseKeyword)
-         :gql-type   (->gql-type (get-type entity)
-                                 :in many? optional?)
+         :gql-type   (->gql-type entity many? optional? :in)
          :many?      many?
          :optional?  optional?})
       ;;
@@ -185,14 +189,15 @@
                               (entity ::entity-id)
                               arg-id)
                           ->camelCaseKeyword)
-         :gql-type    (->gql-type (get-type series-entity)
-                                  :in many? optional?)
+         :gql-type    (->gql-type series-entity many? optional? :in)
          :many?     many?
          :optional? optional?})
       ;;
       (os/attr? entity-id)
-      (let [entity      (os/attr        entity-id)
-            attr-entity (os/attr-entity entity)]
+      (let [entity        (os/attr        entity-id)
+            attr-entity   (os/attr-entity entity)
+            series-entity (when (-> attr-entity :entity-id os/series?)
+                            (os/series-entity attr-entity))]
         {:entity-id      entity-id
          :attr-entity-id (:attr-entity-id entity)
          ;;
@@ -201,8 +206,9 @@
                               (entity ::entity-id)
                               arg-id)
                           ->camelCaseKeyword)
-         :gql-type    (->gql-type (get-type attr-entity)
-                                  :in many? optional?)})
+         :gql-type    (->gql-type (or series-entity attr-entity) many? optional? :in)
+         :many?       many?
+         :optional?   optional?})
       ;;
       :else (throw (ex-info (format "Can't convert arg-id `%s` to a field-ref." arg-id)
                             {:arg-id arg-id})))))
@@ -270,21 +276,19 @@
     (cond
       (native? entity-id)
       {:entity-id entity-id
-       :gql-type  (->gql-type entity-id :out many? optional?)
+       :gql-type  (->gql-type entity-id many? optional?)
        :many?     many?}
       ;;
       (os/scalar? entity-id)
       (let [entity (os/scalar entity-id)]
         {:entity-id entity-id
-         :gql-type  (->gql-type (get-type entity)
-                                :out many? optional?)
+         :gql-type  (->gql-type entity many? optional?)
          :many?     many?})
       ;;
       (os/rec? entity-id)
       (let [entity (os/rec entity-id)]
         {:entity-id entity-id
-         :gql-type  (->gql-type (get-type entity)
-                                :out many? optional?)
+         :gql-type  (->gql-type entity many? optional? :out)
          :many?    many?})
       ;;
       :else (throw (ex-info (format "Can't convert return-type `%s` to a field-ref." return-type)
@@ -319,23 +323,17 @@
 ;;; --------------------------------------------------------------------------------
 
 (defn entity->field-ref
-  [entity-id in-out optional?]
+  [entity-id optional? in-out]
   (cond
     (os/scalar? entity-id)
-    (let [entity (os/scalar entity-id)]
-      {:type (->gql-type (get-type entity)
-                         nil false optional?)})
+    {:type (->gql-type entity-id false optional?)}
     ;;
     (os/rec? entity-id)
-    (let [entity (os/rec entity-id)]
-      {:type (->gql-type (get-type entity)
-                         in-out false optional?)})
+    {:type (->gql-type entity-id false optional? in-out)}
     ;;
     (os/series? entity-id)
-    (let [entity        (os/series entity-id)
-          series-entity (os/series-entity entity)]
-      {:type (->gql-type (get-type series-entity)
-                         in-out true optional?)})
+    {:type (-> entity-id os/series os/series-entity-id
+               (->gql-type true optional? in-out))}
     ;;
     :else (throw (ex-info (format "Can't convert entity `%s` to a field-ref." entity-id)
                           {:entity-id entity-id}))))
@@ -344,15 +342,13 @@
   [{:keys [entity-id description] :as rec}
    in-out]
   [(clj-name->gql-type-name entity-id in-out)
-   (hash-map* {:fields   (->> (os/rec-attrs rec :readonly? (= in-out :out))
-                              (map (fn [attr]
-                                     (let [attr-entity (os/attr-entity attr)]
-                                       [(clj-name->gql-name (or (::entity-id attr)
-                                                                (:entity-id  attr)))
-                                        (entity->field-ref attr-entity
-                                                           in-out
-                                                           (os/optional? rec attr))])))
-                              (into {}))}
+   (hash-map* {:fields     (->> (os/rec-attrs rec :readonly? (= in-out :out))
+                                (map (fn [attr]
+                                       [(clj-name->gql-name (gql-entity-id attr))
+                                        (entity->field-ref (os/attr-entity-id attr)
+                                                           (os/optional? rec attr)
+                                                           in-out)]))
+                                (into {}))}
               :description (or (get-description rec)
                                description))])
 
@@ -551,13 +547,18 @@
          :resolve (fn [context args value]
                     (when debug?
                       (println 'wrap-convert-gql-args endpoint-id)
+                      (println 'before)
                       (pprint args))
                     (let [args   (-> args
                                      json->lacinia-json
                                      (args->core schema endpoint-id))
-                          _      (when debug? (pprint args))
+                          _      (when debug?
+                                   (println 'after)
+                                   (pprint args))
                           result (resolve context args value)]
-                      (when debug? (pprint result))
+                      (when debug?
+                        (println 'returning)
+                        (pprint result))
                       (if (resolved-value? result)
                         result
                         (core->lacinia result schema endpoint-id))))))
