@@ -55,6 +55,7 @@
    (select* nil prefix colls))
   ([sql prefix colls]
    (->> colls
+        (remove nil?)
         (map (fn [col]
                (cond
                  ;; Handle [:column :as-this-name]
