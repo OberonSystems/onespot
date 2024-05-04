@@ -506,7 +506,7 @@
 
 (defn rename-entity
   [entity-id record field-keys->new-field-keys]
-  (update-rows (get-table    entity-id)
+  (update-rows (get-table entity-id)
                (-> (->> field-keys->new-field-keys
                         (map (fn [[id-field-key new-value-key]]
                                [id-field-key (get record new-value-key)]))
