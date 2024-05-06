@@ -3,6 +3,7 @@
             ;;
             [honey.sql         :as hsql]
             [honey.sql.helpers :as h]
+            ;; Registers things like <@, etc.
             honey.sql.pg-ops
             ;;
             [onespot.core     :as os]
@@ -35,15 +36,11 @@
 
 ;;; --------------------------------------------------------------------------------
 
-;; (def <at (keyword "<@"))
-;; (def at> (keyword "@>"))
-;; (hsql/register-op! <at)
-;; (hsql/register-op! at>)
-
-;; FIXME: I'm not sure if this should be here or not, in some cases I
-;; need it for the generated SQL to work, in other cases I don't.  Ie,
-;; rename-tag doesn't want it but in other code it is required
-(hsql/register-op! :any)
+;; I couldn't get :any to work consistently, if it is treated like a
+;; function by HoneySQL then everything is fine, but sometimes it
+;; wants to treat it like an operator.
+;;
+;; I've replaced usage of [:any ...] below with [:raw "ANY(...)"].
 
 ;;; --------------------------------------------------------------------------------
 
@@ -97,7 +94,11 @@
                 (h/set {column [:remove_from_array column
                                  [:cast tag-id array-type]]})
                 (h/where [:and where
-                           [:= tag-id [:any :tags]]]))]
+                          ;; Should be able to use [:any :tags] below
+                          ;; but there is a bug somewhere deep in
+                          ;; HoneySQL related to treating :any as an
+                          ;; operator.
+                           [:= tag-id [:raw "ANY(tags)"]]]))]
     (execute-sql sql debug?)))
 
 (defn rename-tag
@@ -108,7 +109,8 @@
                                 [:cast tag-id     array-type]
                                 [:cast new-tag-id array-type]]})
                 (h/where [:and where
-                          [:= tag-id [:any :tags]]]))]
+                          ;; See comment above.
+                          [:= tag-id [:raw "ANY(tags)"]]]))]
     (execute-sql sql debug?)))
 
 ;;; --------------------------------------------------------------------------------
