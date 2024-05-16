@@ -86,13 +86,30 @@
 
 ;;; --------------------------------------------------------------------------------
 
+(defn fetch-one
+  "Fetches a single entity based upon the matching criteria.
+
+  Throw by default when no matching record found."
+  [entity-id matching & {:as options}]
+  (hs/one entity-id
+          matching
+          (merge {:verbose? true
+                  :throw?   true}
+                 options)))
+
 (defn fetch-entity
+  "Fetches a single entity based upon the identity values extracted from the token.
+
+  Throw by default when no matching record found."
   [entity-id token & {:keys [matching] :as options}]
   (hs/one entity-id
-          (or matching (os/rec-identity entity-id token))
-          (assoc options :verbose? true)))
+          (merge matching (os/rec-identity entity-id token))
+          (merge {:verbose? true
+                  :throw?   true}
+                 (dissoc options :matching))))
 
 (defn fetch-entities
+  "Fetches many entities based upon matching, can return nil."
   [entity-id matching & {:as options}]
   (hs/fetch entity-id
             matching

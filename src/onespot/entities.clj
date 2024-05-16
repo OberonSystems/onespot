@@ -101,18 +101,27 @@
                             :enum-type enum-type}})))
 
 (defn make-token!
-  [token-id & [parent-id]]
-  (let [[token-id parent-id] (if parent-id
-                               [token-id parent-id]
-                               [(keyword (namespace token-id)
-                                         (str (name token-id) "-token"))
-                                token-id])
-        ;;
-        entity-ids (os/rec-identity-ids parent-id)]
+  [token-id & [entity-id]]
+  (let [[entity-id token-id rename-token-id] (if entity-id
+                                               [entity-id
+                                                token-id
+                                                (keyword (namespace token-id)
+                                                         (str (name token-id) "-rename-token"))]
+                                               [token-id
+                                                (keyword (namespace token-id)
+                                                         (str (name token-id) "-token"))
+                                                (keyword (namespace token-id)
+                                                         (str (name token-id) "-rename-token"))])
+        entity-ids (os/rec-identity-ids entity-id)
+        rename-ids (os/rec-rename-ids   entity-id)
+        pg-info    (-> (os/rec entity-id) ::pg/info)]
+
     (os/rec! token-id entity-ids
              :identity-ids entity-ids
-             ;;
-             ::pg/info (-> (os/rec parent-id) ::pg/info))))
+             ::pg/info     pg-info)
+
+    (when rename-ids
+      (os/rec! rename-token-id rename-ids))))
 
 (defn make-info!
   [info-id parent-id & {:keys [readonly-ids optional-ids] :as options}]

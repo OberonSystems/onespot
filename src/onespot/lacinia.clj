@@ -229,9 +229,10 @@
 ;;; --------------------------------------------------------------------------------
 
 (defn optional
-  [entity-id]
-  {:type entity-id
-   :optional? true})
+  [entity-id & {:as options}]
+  (merge {:type      entity-id
+          :optional? true}
+         options))
 
 (defn canonicalise-return-type
   [return-type]

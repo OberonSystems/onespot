@@ -350,6 +350,10 @@
   [entity-id]
   (-> entity-id rec :identity-ids))
 
+(defn rec-rename-ids
+  [entity-id]
+  (-> entity-id rec :rename-ids))
+
 (defn rec-optional-ids
   [entity-id]
   (-> entity-id rec :optional-ids))
