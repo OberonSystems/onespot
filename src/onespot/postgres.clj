@@ -101,6 +101,13 @@
   [ld]
   (.format ld +yyyy-mm+))
 
+(defn inst->yyyy-mm-dd
+  [^Instant inst & [zone-id]]
+  (let [ld (.. inst
+               (atZone (ZoneId/of (or zone-id "UTC")))
+               toLocalDate)]
+    (.format ld DateTimeFormatter/ISO_LOCAL_DATE)))
+
 (defn yyyy-mm-dd->ld
   [s]
   (LocalDate/parse s +yyyy-mm-dd+))
