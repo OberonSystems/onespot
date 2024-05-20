@@ -13,6 +13,9 @@
 (def ->camelCaseKeyword
   (m/fifo csk/->camelCaseKeyword {} :fifo/threshold 1024))
 
+(def ->camelCaseString
+  (m/fifo csk/->camelCaseString {} :fifo/threshold 1024))
+
 (def ->kebab-case-string
   (m/fifo csk/->kebab-case-string {} :fifo/threshold 1024))
 
@@ -27,6 +30,9 @@
 
 (def ->PascalCaseKeyword
   (m/fifo csk/->PascalCaseKeyword {} :fifo/threshold 1024))
+
+(def ->PascalCaseString
+  (m/fifo csk/->PascalCaseString {} :fifo/threshold 1024))
 
 (def ->SCREAMING_SNAKE_CASE_KEYWORD
   (m/fifo csk/->SCREAMING_SNAKE_CASE_KEYWORD {} :fifo/threshold 1024))
