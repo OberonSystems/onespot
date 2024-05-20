@@ -99,6 +99,13 @@
                        {:entity-id entity-id :kind kind :expected-kind expected-kind})))
      result)))
 
+(defn push-into!
+  [entity-id & kvs]
+  (doseq [[k v] (partition 2 kvs)]
+    (swap! +registry+ #(assoc %
+                              entity-id (-> (pull entity-id)
+                                            (assoc k v))))))
+
 ;;; --------------------------------------------------------------------------------
 
 (defn canonical-entity-id
