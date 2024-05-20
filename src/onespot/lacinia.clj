@@ -340,18 +340,23 @@
                           {:entity-id entity-id}))))
 
 (defn rec->object
-  [{:keys [entity-id description] :as rec}
+  [{{:keys [optional-out-ids]} ::info
+    :keys [entity-id description] :as rec}
    in-out]
-  [(clj-name->gql-type-name entity-id in-out)
-   (hash-map* {:fields     (->> (os/rec-attrs rec :readonly? (= in-out :out))
-                                (map (fn [attr]
-                                       [(clj-name->gql-name (gql-entity-id attr))
-                                        (entity->field-ref (os/attr-entity-id attr)
-                                                           (os/optional? rec attr)
-                                                           in-out)]))
-                                (into {}))}
-              :description (or (get-description rec)
-                               description))])
+  (let [out?             (= in-out :out)
+        optional-out-ids (when (and out? optional-out-ids)
+                           (set optional-out-ids))]
+    [(clj-name->gql-type-name entity-id in-out)
+     (hash-map* {:fields     (->> (os/rec-attrs rec :readonly? out?)
+                                  (map (fn [{:keys [entity-id] :as attr}]
+                                         [(clj-name->gql-name (gql-entity-id attr))
+                                          (entity->field-ref (os/attr-entity-id attr)
+                                                             (or (os/optional? rec attr)
+                                                                 (contains? optional-out-ids entity-id))
+                                                             in-out)]))
+                                  (into {}))}
+                :description (or (get-description rec)
+                                 description))]))
 
 ;;; --------------------------------------------------------------------------------
 
