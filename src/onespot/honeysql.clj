@@ -66,7 +66,7 @@
         (apply h/select))))
 
 (defn page-by
-  [sql {{:keys [index size]} :paging}]
+  [sql {{:keys [index size]} :page}]
   (cond-> sql
     size (-> (h/offset (* size (or index 0)))
              (h/limit size))))
