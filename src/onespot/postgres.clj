@@ -324,11 +324,11 @@
                        (or (:type info) entity-id)))
 
 (defmethod db->entity :default
-  [entity v]
+  [entity-id v]
   (db->clj v))
 
 (defmethod db->entity ::os/keyword
-  [entity v]
+  [entity-id v]
   (keyword v))
 
 (defmethod db->entity ::os/edn-map
@@ -336,16 +336,16 @@
   (when v (edn/read-string v)))
 
 (defmethod db->entity ::enum
-  [entity v]
+  [entity-id v]
   (keyword v))
 
 (defmethod db->entity ::keyword-array
-  [entity v]
+  [entity-id v]
   (->> (.getArray v)
        (map keyword)))
 
 (defmethod db->entity ::date-range
-  [entity v]
+  [entity-id v]
   (let [[date-from date-to] v]
     {:date-from date-from
      :date-to   date-to}))
