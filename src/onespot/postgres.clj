@@ -128,6 +128,10 @@
                toLocalDate)]
     (Date/valueOf ld)))
 
+(defn ld->sql
+  [ld]
+  (Date/valueOf ld))
+
 ;;; --------------------------------------------------------------------------------
 ;;  WRITING TO DATABASE, INCLUDING COERCION FOR QUERIES
 
@@ -205,7 +209,7 @@
 
 (defmethod clj->db java.time.LocalDate
   [v]
-  (Date/valueOf v))
+  (ld->sql v))
 
 (defmethod clj->db java.time.Instant
   [v]
