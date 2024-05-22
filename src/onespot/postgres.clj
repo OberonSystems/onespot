@@ -446,7 +446,7 @@
    (execute (into [sql] params))))
 
 (defn execute-one
-  "Takes and SQL string and parameters, morphs them into the shape
+  "Takes an SQL string and parameters, morphs them into the shape
   required to execute a single SQL statement."
   [sql & params]
   (execute (into [sql] params)))
