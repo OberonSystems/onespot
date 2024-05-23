@@ -56,6 +56,11 @@
 
 ;;;
 
+(defn resolve-with-message
+  [message & [errors]]
+  (resolve-as nil (merge {:message message}
+                         (when errors {:errors errors}))))
+
 (defn resolve-with-error
   [{:keys [accepted? results]}]
   (let [{:keys [command errors exception]} (->> results
