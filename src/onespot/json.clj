@@ -116,6 +116,12 @@
     (when-not (s/blank? value)
       value)))
 
+(defmethod json->entity ::os/e164
+  [entity value]
+  (let [value (some-> value (s/replace #"[^+0-9]" ""))]
+    (when-not (s/blank? value)
+      value)))
+
 (defmethod json->entity ::enum
   [entity value]
   (some-> value ->kebab-case-keyword))
