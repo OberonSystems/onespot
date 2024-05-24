@@ -230,7 +230,7 @@
 
 (defmethod entity->db ::os/edn-map
   [entity v]
-  (some-> v pr-str))
+  (pr-str v))
 
 (defmethod entity->db ::os/keyword
   [entity v]
