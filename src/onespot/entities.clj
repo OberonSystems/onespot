@@ -48,6 +48,12 @@
   (os/scalar! ::os/positive-integer vl/positive-integer
               ::lc/info             {:type :int})
 
+  (os/scalar! ::os/big-decimal vl/big-decimal
+              ::lc/info        {:type :float})
+
+  (os/scalar! ::os/positive-big-decimal vl/positive-big-decimal
+              ::lc/info                 {:type :float})
+
   (os/scalar! ::os/email   vl/email
               :description "A lower case email address."
               ::lc/info    {:type :string})

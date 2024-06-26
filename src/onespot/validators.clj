@@ -178,6 +178,32 @@
 
 ;;;
 
+(defn big-decimal?
+  [x]
+  (instance? java.math.BigDecimal x))
+
+
+(defn big-decimal
+  [x]
+  (when-not (big-decimal? x)
+    {:code    :bad-value
+     :message "Must be a big decimal."
+     :value   x}))
+
+(defn positive-big-decimal?
+  [x]
+  (and (big-decimal? x)
+       (< 0 x)))
+
+(defn positive-big-decimal
+  [x]
+  (when-not (positive-big-decimal? x)
+    {:code    :bad-value
+     :message "Must be a positive big decimal."
+     :value   x}))
+
+;;;
+
 (defn local-date?
   [x]
   (instance? LocalDate x))
