@@ -154,6 +154,13 @@
 
 ;;;
 
+(defn integer
+  [x]
+  (when-not (integer? x)
+    {:code    :bad-value
+     :message "Must be an integer."
+     :value   x}))
+
 (defn non-negative-integer?
   [x]
   (and (integer? x) (< -1 x)))
