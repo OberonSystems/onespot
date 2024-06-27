@@ -72,6 +72,10 @@
   [entity value]
   (some-> value .toString))
 
+(defmethod entity->json ::os/big-decimal
+  [entity value]
+  (some-> value .toString))
+
 (defmethod entity->json ::enum
   [entity value]
   (some-> value name ->SCREAMING_SNAKE_CASE_STRING))
@@ -109,6 +113,10 @@
 (defmethod json->entity ::os/instant
   [entity value]
   (some-> value Instant/parse))
+
+(defmethod json->entity ::os/big-decimal
+  [entity value]
+  (some-> value bigdec))
 
 (defmethod json->entity ::os/alpha-numeric
   [entity value]

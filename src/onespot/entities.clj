@@ -4,6 +4,11 @@
             [onespot.lacinia    :as lc]
             [onespot.postgres   :as pg]))
 
+(derive ::os/non-negative-integer ::os/integer)
+(derive ::os/positive-integer     ::os/integer)
+
+(derive ::os/positive-big-decimal ::os/big-decimal)
+
 (defn register-common!
   []
   (os/scalar! ::os/boolean vl/true-or-false
@@ -42,6 +47,9 @@
               :description       "Non Blank Alpha Numeric String - no white space, 0-9, a-z and A-Z only."
               ::lc/info          {:type :string})
 
+  (os/scalar! ::os/integer vl/integer
+              ::lc/info    {:type :int})
+
   (os/scalar! ::os/non-negative-integer vl/non-negative-integer
               ::lc/info                 {:type :int})
 
@@ -49,10 +57,10 @@
               ::lc/info             {:type :int})
 
   (os/scalar! ::os/big-decimal vl/big-decimal
-              ::lc/info        {:type :float})
+              ::lc/info        {:type :string})
 
   (os/scalar! ::os/positive-big-decimal vl/positive-big-decimal
-              ::lc/info                 {:type :float})
+              ::lc/info                 {:type :string})
 
   (os/scalar! ::os/email   vl/email
               :description "A lower case email address."
