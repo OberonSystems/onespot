@@ -25,7 +25,7 @@
             SQLException]
            [org.postgresql.util PGobject]
            ;;
-           [java.time LocalDate Instant ZoneId]
+           [java.time LocalDate LocalDateTime Instant ZoneId]
            [java.time.format DateTimeFormatter]))
 
 ;;; --------------------------------------------------------------------------------
@@ -81,6 +81,8 @@
 ;;
 ;;  FIXME:: Move all of this into the oberon coerce library.
 
+(def +yyyy-mm-dd-HHmmss+ (DateTimeFormatter/ofPattern "yyyy-MM-dd HH:mm:ss"))
+
 (def +yyyy-mm-dd+ (DateTimeFormatter/ofPattern "yyyy-MM-dd"))
 (def +yyyy-mm+    (DateTimeFormatter/ofPattern "yyyy-MM"))
 (def +yyyymmdd+   (DateTimeFormatter/ofPattern "yyyyMMdd"))
@@ -92,6 +94,10 @@
 (defn ld->offset-date-time
   [^LocalDate ld]
   (.format ld DateTimeFormatter/ISO_OFFSET_DATE_TIME))
+
+(defn ldt->offset-date-time
+  [^LocalDateTime ldt]
+  (.format ldt +yyyy-mm-dd-HHmmss+))
 
 (defn ld->yyyy-mm-dd
   [^LocalDate ld]
