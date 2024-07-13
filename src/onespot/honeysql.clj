@@ -127,12 +127,16 @@
   (execute-sql sql debug?))
 
 (defn one
-  [kind matching & {:keys [throw?] :as opts}]
-  (let [opts (->> (-> opts
+  [kind matching & {:keys [identity? throw?] :as opts}]
+  (let [matching (if identity?
+                   (os/rec-identity kind matching)
+                   matching)
+        opts (->> (-> opts
                       (assoc  :page {:size 2})
                       (dissoc :throw?))
                   (into (list))
                   flatten)
+        ;;
         records (apply fetch kind matching opts)]
     (if (= (count records) 1)
       (first records)
