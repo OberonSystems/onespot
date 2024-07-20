@@ -57,7 +57,9 @@
 
 (def ^:dynamic *datasource*)
 (def ^:dynamic *connection*)
-(def ^:dynamic *transaction*)
+
+(defn get-datasource [] *datasource*)
+(defn get-connection [] *connection*)
 
 (defmacro with-datasource [datasource & body]
   `(let [datasource# ~datasource]
@@ -70,11 +72,11 @@
        ~@body)))
 
 (defmacro in-transaction [& body]
-  `(with-open [connection# (jdbc/get-connection *datasource*)]
-     (binding [*connection* connection#]
-       (jdbc/with-transaction [tx# *connection*]
-         (binding [*transaction* tx#]
-           ~@body)))))
+  ;; JDBC will create a transactable object from the datasource and
+  ;; handle the commit/rollback/close life cycle.
+  `(jdbc/with-transaction [tx# *datasource*]
+     (binding [*connection* tx#]
+       ~@body)))
 
 ;;; --------------------------------------------------------------------------------
 ;;  Simple value converters
@@ -459,7 +461,9 @@
 
 (defn rollback
   []
-  (.rollback *transaction*))
+  ;; Assumes we are within a transactable connection, ie,
+  ;; with-transaction.
+  (.rollback *connection*))
 
 (defn updated?
   [result]
