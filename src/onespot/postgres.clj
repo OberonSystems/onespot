@@ -11,7 +11,7 @@
             [next.jdbc.result-set :as rs]
             [next.jdbc.date-time  :as jdbc-dt]
             ;;
-            [oberon.utils :refer [dump-> dump->> nil-when->>]]
+            [oberon.utils :refer [dump-> dump->> nil-when->> dissoc*]]
             [onespot.cache :as cc]
             [onespot.core  :as os]
             [onespot.snakes :refer [->kebab-case-keyword ->snake_case_keyword ->snake_case_string ->SCREAMING_SNAKE_CASE_STRING]])
@@ -513,15 +513,18 @@
     (insert-row table (merge token values))))
 
 (defn modify-entity
-  [entity-id record & {:keys [values extras debug?]}]
+  [entity-id record & {:keys [values extras excludes debug?]}]
   (let [table  (get-table entity-id)
         token  (os/rec-identity entity-id record)
-        values (merge (or values (os/rec-values entity-id record :throw? true))
+        values (merge (or values
+                          (-> (os/rec-values entity-id record :throw? true)
+                              (dissoc* excludes)))
                       extras)]
     (when debug?
       (log/info (format "Modify Entity for: `%s`" entity-id))
       (log/info (format "...table: %s" table))
       (log/info (format "...token: %s" token))
+      (log/info (format "...excluding: %s" excludes))
       (log/info (format "...values: %s" values)))
     (update-rows table values token)))
 
