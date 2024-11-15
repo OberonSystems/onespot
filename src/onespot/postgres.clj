@@ -550,3 +550,23 @@
   [entity-id record]
   (delete-rows (get-table entity-id)
                (os/rec-identity entity-id record)))
+
+;;;
+
+(defn add-children
+  [parent-id parent child-id children & {:as options}]
+  (let [parent (os/rec-identity parent-id parent)]
+    (-> (map (fn [child]
+               (add-entity child-id
+                           ;; Merge the parent over the child to ensure the child
+                           ;; gets the parent key values.  This simplifies
+                           ;; copying children from one entity to another.
+                           (merge child parent)
+                           options))
+             children)
+        seq)))
+
+(defn remove-children
+  [parent-id child-id parent]
+  (delete-rows (get-table child-id)
+               (os/rec-identity parent-id parent)))
