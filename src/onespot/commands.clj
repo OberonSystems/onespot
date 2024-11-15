@@ -57,8 +57,9 @@
            :results   (conj results {:command command :errors errors})})
         ;;
         (let [result (try
-                       (process-command command)
-                       (store-command   command)
+                       (-> command
+                           process-command
+                           store-command)
                        (catch Exception ex
                          (or (when (instance? SQLException ex)
                                (.getNextException ex))
