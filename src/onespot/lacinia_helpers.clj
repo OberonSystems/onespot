@@ -23,6 +23,14 @@
 
 ;;; --------------------------------------------------------------------------------
 
+(defn parse-json-args
+  [schema endpoint-id json]
+  (some-> json
+          lc/json->lacinia-json
+          (lc/args->core schema endpoint-id)))
+
+;;; --------------------------------------------------------------------------------
+
 (defn throw-not-implemented
   [f]
   (throw (ex-info (str f " is not implemented yet.") {:handler f})))
