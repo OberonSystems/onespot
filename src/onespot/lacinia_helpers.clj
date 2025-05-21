@@ -35,7 +35,6 @@
   [f]
   (throw (ex-info (str f " is not implemented yet.") {:handler f})))
 
-(defn resolve-safely
 ;;;
 
 (defn canonicalise-args
@@ -52,22 +51,36 @@
   ;; shape.
   (assoc record :resolve (canonicalise-args resolve)))
 
+;;;
+
+(defn resolve-safely
+  [resolve verbose?]
   (fn [context args value]
     (try
-      ;; We call canonical-values here as args can be passed JSON from
-      ;; a browser, which can have leading/trailing spaces, empty
-      ;; strings instead of NULL for number fields and all sorts of
-      ;; mess.
-      (resolve context (canonical-values args) value)
-      (catch clojure.lang.ExceptionInfo e
-        (let [st (with-out-str (print-stack-trace e))]
-          (log/info st)
-          (resolve-as nil {:message st
-                           :ex-data (ex-data e)}))))))
+      (resolve context args value)
+      (catch Throwable e
+        ;; We don't include the context in the info as it's massive
+        ;; and wont be that useful for debugging from the frontend.
+        (let [info {:args    args
+                    :value   value
+                    :message (with-out-str (print-stack-trace e))
+                    :ex-data (ex-data e)}]
+          ;; We always want to show the error in our logging console output.
+          (log/info info)
+          ;; We may want to return a GQL representation of the
+          ;; exception with the context to help dev.
+          ;;
+          ;; In prod we should return something opaque, as that will
+          ;; not give a hackers any clues as to how we are implemented.
+          (if verbose?
+            (resolve-as nil info)
+            (resolve-as nil {:message "An error has occurred, please try again later and/or contact support."})))))))
 
 (defn wrap-resolve-safely
-  [{:keys [resolve] :as record} & _]
-  (assoc record :resolve (resolve-safely resolve)))
+  [{:keys [resolve] :as record} & {:keys [verbose?] :as options}]
+  (assoc record :resolve (resolve-safely resolve verbose?)))
+
+;;;
 
 (defn wrap-exporter
   [exporter filter-entity-id]
