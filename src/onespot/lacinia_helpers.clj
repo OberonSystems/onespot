@@ -36,7 +36,22 @@
   (throw (ex-info (str f " is not implemented yet.") {:handler f})))
 
 (defn resolve-safely
+;;;
+
+(defn canonicalise-args
   [resolve]
+  (fn [context args value]
+    (resolve context (canonical-values args) value)))
+
+(defn wrap-canonicalise-args
+  [{:keys [resolve] :as record} & _]
+  ;; We call canonical-values here as args can be passed as JSON from
+  ;; a browser, which can have leading/trailing spaces, empty strings
+  ;; instead of NULLs for number fields, etc, and all sorts of mess.
+  ;; This is the first step to make the JSON conform to a 'standard'
+  ;; shape.
+  (assoc record :resolve (canonicalise-args resolve)))
+
   (fn [context args value]
     (try
       ;; We call canonical-values here as args can be passed JSON from
