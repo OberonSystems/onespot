@@ -147,11 +147,15 @@
      (entity->json entity value)
      ;; We assume the native JSON coercion can handle it.
      value))
-  ([m]
-   (->> m
-        (map (fn [[k v]]
-               [k (->json k v)]))
-        (into {}))))
+  ([v]
+   (let [map-> (fn [m]
+                 (->> m
+                      (map (fn [[k v]] [k (->json k v)]))
+                      (into {})))]
+     (cond
+       (map?    v) (map-> v)
+       (vector? v) (mapv map-> v)
+       (list?   v) (map  map-> v)))))
 
 ;;;
 
@@ -166,8 +170,13 @@
      (json->entity entity value)
      ;; We assume the native JSON coercion can handle it.
      value))
-  ([m]
-   (->> m
-        (map (fn [[k v]]
-               [k (->core k v)]))
-        (into {}))))
+  ([v]
+   (let [->map (fn [m]
+                 (->> m
+                      (map (fn [[k v]]
+                             [k (->core k v)]))
+                      (into {})))]
+     (cond
+       (map?    v) (->map v)
+       (vector? v) (mapv ->map v)
+       (list?   v) (map  ->map v)))))
