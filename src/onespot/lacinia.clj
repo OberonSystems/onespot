@@ -531,7 +531,7 @@
                              {})]
     (->> record
          (map (fn [[k v]]
-                [k (js/->core (entity-id-lookup k k) v)]))
+                [k (js/->clj-value (entity-id-lookup k k) v)]))
          (into {}))))
 
 (defn core->lacinia
@@ -540,7 +540,7 @@
                                                 (get endpoint-id)
                                                 :return-type)
         ->lacinia (fn [v]
-                    (-> (js/->json entity-id v)
+                    (-> (js/->json-value entity-id v)
                         ->lacinia-keys))]
     (if many?
       (or (some->> value (mapv ->lacinia))

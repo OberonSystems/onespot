@@ -140,43 +140,57 @@
   [m]
   (keys->camel-case m :rename-map (os/make-core-key->ns-key ::entity-id)))
 
-(defn ->json
+(defn ->json-value
   ([entish value]
    (if-let [entity (when (os/registered? entish)
                      (get-entity entish))]
      (entity->json entity value)
      ;; We assume the native JSON coercion can handle it.
      value))
-  ([v]
-   (let [map-> (fn [m]
+  ([value]
+   (let [->value (fn [m]
                  (->> m
-                      (map (fn [[k v]] [k (->json k v)]))
+                      (map (fn [[k v]] [k (->json-value k v)]))
                       (into {})))]
      (cond
-       (map?    v) (map-> v)
-       (vector? v) (mapv map-> v)
-       (list?   v) (map  map-> v)))))
+       (map?    value) (->value value)
+       (vector? value) (mapv ->json-value value)
+       (list?   value) (map  ->json-value value)))))
 
 ;;;
 
-(defn ->core-keys
+(defn ->clj-keys
   [m]
   (keys->kebab-case m :rename-map (os/make-ns-key->core-key ::entity-id)))
 
-(defn ->core
+(defn ->clj-value
   ([entish value]
    (if-let [entity (when (os/registered? entish)
                      (get-entity entish))]
      (json->entity entity value)
      ;; We assume the native JSON coercion can handle it.
      value))
-  ([v]
-   (let [->map (fn [m]
-                 (->> m
-                      (map (fn [[k v]]
-                             [k (->core k v)]))
-                      (into {})))]
+  ([value]
+   (let [->value (fn [m]
+                   (->> m
+                        (map (fn [[k v]]
+                               [k (->clj-value k v)]))
+                        (into {})))]
      (cond
-       (map?    v) (->map v)
-       (vector? v) (mapv ->map v)
-       (list?   v) (map  ->map v)))))
+       (map?    value) (->value value)
+       (vector? value) (mapv ->value value)
+       (list?   value) (map  ->value value)))))
+
+;;;
+
+(defn ->json
+  [value]
+  (-> value
+      ->json-value
+      ->json-keys))
+
+(defn ->clj
+  [value]
+  (-> value
+      ->clj-keys
+      ->clj-value))

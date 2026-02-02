@@ -88,7 +88,7 @@
     (exporter request
               (->> filter
                    lc/->core-keys
-                   (js/->core filter-entity-id)))))
+                   (js/->clj-value filter-entity-id)))))
 
 ;;;
 
