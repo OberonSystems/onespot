@@ -1,9 +1,8 @@
 (ns onespot.validate-tests
-  (:require [clojure.test :refer [deftest testing is run-tests]])
-  (:require [onespot.core       :as os]
-            [onespot.validators :as vs]
+  (:require [clojure.test :refer [deftest is]])
+  (:require [onespot.validators :as vs]
             [onespot.validate   :as vl]
-            [onespot.common     :refer [register-all!]]
+            [onespot.test-utils :refer [register-all!]]
             :reload))
 
 (defn sf

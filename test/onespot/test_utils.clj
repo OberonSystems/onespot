@@ -1,7 +1,6 @@
-(ns onespot.common
-  (:require [clojure.test :refer [deftest testing is run-tests]])
-  (:require [onespot.core :refer :all :as os]
-            [onespot.validators :refer :all]
+(ns onespot.test-utils
+  (:require [onespot.core :refer [attr! clear! scalar! rec! series!] :as os]
+            [onespot.validators :refer [a-set non-blank-string one-of]]
             [onespot.lacinia  :as lc]
             [onespot.json     :as js]
             [onespot.entities :as oe]

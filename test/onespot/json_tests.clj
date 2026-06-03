@@ -1,49 +1,48 @@
 (ns onespot.json-tests
-  (:require [clojure.test :refer [deftest testing is run-tests]])
-  (:require [onespot.core       :refer :all :as os]
-            [onespot.validators :refer :all]
-            [onespot.json       :refer [->core-keys ->core
-                                        ->json-keys ->json]]
-            [onespot.common :refer :all]
+  (:require [clojure.test :refer [deftest is]])
+  (:require [onespot.core       :refer [attr! rec! series!] :as os]
+            [onespot.json       :refer [->clj-keys ->clj-value  ->clj
+                                        ->json-keys ->json-value ->json]]
+            [onespot.test-utils :refer [register-all! register-attrs! register-scalars!]]
             :reload)
   (:import [java.time LocalDate Instant]))
 
 (deftest test-scalars
   (register-scalars!)
 
-  (is (= (->json ::os/boolean true) true))
-  (is (= (->json ::os/string "a string") "a string"))
-  (is (= (->json :string1 "a string") "a string"))
-  (is (= (->json :shirt-size-type :sm) "SM"))
+  (is (= (->json-value ::os/boolean true) true))
+  (is (= (->json-value ::os/string "a string") "a string"))
+  (is (= (->json-value :string1 "a string") "a string"))
+  (is (= (->json-value :shirt-size-type :sm) "SM"))
 
-  (is (= (->core ::os/boolean true) true))
-  (is (= (->core :string1 "a string") "a string"))
-  (is (= (->core :shirt-size-type "SM") :sm))
+  (is (= (->clj-value ::os/boolean true) true))
+  (is (= (->clj-value :string1 "a string") "a string"))
+  (is (= (->clj-value :shirt-size-type "SM") :sm))
 
-  (is (= (->core ::os/local-date "2024-01-01")
+  (is (= (->clj-value ::os/local-date "2024-01-01")
          (LocalDate/parse "2024-01-01")))
-  (is (= (->core ::os/instant "2024-01-05T23:13:57.254310Z")
+  (is (= (->clj-value ::os/instant "2024-01-05T23:13:57.254310Z")
          (Instant/parse "2024-01-05T23:13:57.254310Z"))))
 
 (deftest test-attrs
   (register-attrs!)
   (let [local-str "2024-01-05"
         local-obj (LocalDate/parse local-str)]
-    (is (= (->json :day local-obj) local-str))
-    (is (= (->core :day local-str) local-obj)))
+    (is (= (->json-value :day local-obj) local-str))
+    (is (= (->clj-value :day local-str) local-obj)))
 
   (let [inst-str "2024-01-05T23:13:57.254310Z"
         inst-obj (Instant/parse inst-str)]
-    (is (= (->json :now inst-obj) inst-str))
-    (is (= (->core :now inst-str) inst-obj)))
+    (is (= (->json-value :now inst-obj) inst-str))
+    (is (= (->clj-value  :now inst-str) inst-obj)))
 
-  (is (= (->json :given-name   "my name is ...") "my name is ..."))
-  (is (= (->json :active?      true)             true))
-  (is (= (->json :shirt-size   :sm)              "SM"))
+  (is (= (->json-value :given-name   "my name is ...") "my name is ..."))
+  (is (= (->json-value :active?      true)             true))
+  (is (= (->json-value :shirt-size   :sm)              "SM"))
 
-  (is (= (->core :given-name   "my name is ...") "my name is ..."))
-  (is (= (->core :active?      true)             true))
-  (is (= (->core :shirt-size   "SM")             :sm)))
+  (is (= (->clj-value :given-name   "my name is ...") "my name is ..."))
+  (is (= (->clj-value :active?      true)             true))
+  (is (= (->clj-value :shirt-size   "SM")             :sm)))
 
 (deftest test-recs
   (register-all!)
@@ -53,34 +52,34 @@
   (let [core {:given-name   "Bob" :active?  false :shirt-size :sm}
         json {:theGivenName "Bob" :isActive false :shirtSize  :sm}]
     (is (= (->json-keys core) json))
-    (is (= (->core-keys json) core)))
+    (is (= (->clj-keys json) core)))
 
   (let [core {:given-name   "Bob" :active?  false :shirt-sizes [:sm :lg]}
         json {:theGivenName "Bob" :isActive false :shirtSizes  ["SM" "LG"]}]
-    (is (= (->> (->json :person2 core) ->json-keys)  json))
-    (is (= (->> json ->core-keys (->core :person2)) core)))
+    (is (= (->> (->json-value :person2 core) ->json-keys)  json))
+    (is (= (->> json ->clj-keys (->clj-value :person2)) core)))
 
   ;; Reading/Writing when entity has additional readonly attributes
-  (is (= (->> (->json :person-with-readonly {:person-id 1234 :given-name "Bob" :family-name "Jane"})
+  (is (= (->> (->json-value :person-with-readonly {:person-id 1234 :given-name "Bob" :family-name "Jane"})
               ->json-keys)
          {:personId 1234 :theGivenName "Bob" :familyName "Jane"}))
 
-  (is (= (->> (->json :person-with-readonly {:person-id 1234 :given-name "Bob"})
+  (is (= (->> (->json-value :person-with-readonly {:person-id 1234 :given-name "Bob"})
               ->json-keys)
          {:personId 1234 :theGivenName "Bob" :familyName nil}))
 
-  (is (= (->> (->json :person-with-readonly {:person-id 1234})
+  (is (= (->> (->json-value :person-with-readonly {:person-id 1234})
               ->json-keys)
          {:personId 1234 :theGivenName nil :familyName nil}))
   ;;
   (is (= (->> {:personId 1234 :theGivenName "Bob" :familyName "Jane"}
-              ->core-keys
-              (->core :person-with-readonly))
+              ->clj-keys
+              (->clj-value :person-with-readonly))
          {:person-id 1234 :given-name "Bob"}))
 
   (is (= (->> {:person-id 1234}
-              ->core-keys
-              (->core :person-with-readonly))
+              ->clj-keys
+              (->clj-value :person-with-readonly))
          {:person-id 1234 :given-name nil})))
 
 (deftest test-nested-recs
@@ -94,7 +93,7 @@
                :active?       true
                :contact-infos [{:contact-type :mobile :contact-value "1234"}
                                {:contact-type :email  :contact-value "blah@blah"}]}
-              (->json :person)
+              (->json-value :person)
               ->json-keys)
          {:theGivenName "Person 1"
           :isActive     true
@@ -110,7 +109,7 @@
                 :active?       true
                 :contact-infos [{:contact-type :mobile :contact-value "1234"}
                                 {:contact-type :email  :contact-value "blah@blah"}]}]
-              (->json :people-series)
+              (->json-value :people-series)
               ->json-keys)
          [{:theGivenName "Person 1"
            :isActive     true
@@ -131,7 +130,7 @@
                          :active?       true
                          :contact-infos [{:contact-type :mobile :contact-value "1234"}
                                          {:contact-type :email  :contact-value "blah@blah"}]}]}
-              (->json :address-book)
+              (->json-value :address-book)
               ->json-keys)
          {:people [{:theGivenName "Person 1"
                     :isActive      true
@@ -145,16 +144,16 @@
 (deftest test-series
   (register-attrs!)
   (series! :strings :string1)
-  (is (= (->json :strings ["one" "two"]) ["one" "two"]))
+  (is (= (->json-value :strings ["one" "two"]) ["one" "two"]))
 
   (series! :booleans ::os/boolean)
-  (is (= (->json :booleans [true true false]) [true true false]))
+  (is (= (->json-value :booleans [true true false]) [true true false]))
 
   (rec! :person [:given-name :active? :shirt-sizes])
   (series! :people :person)
   (is (= (->> [{:given-name "Bob"  :active? false :shirt-sizes [:sm :lg]}
                {:given-name "Jane" :active? true  :shirt-sizes [:sm :xl]}]
-              (->json :people)
+              (->json-value :people)
               ->json-keys)
          [{:theGivenName "Bob"  :isActive false :shirtSizes ["SM" "LG"]}
           {:theGivenName "Jane" :isActive true  :shirtSizes ["SM" "XL"]}])))

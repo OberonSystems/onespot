@@ -1,20 +1,9 @@
 (ns onespot.json
   (:require [clojure.string :as s]
-            [clojure.core.memoize :as m]
-            ;;
-            [oberon.utils :refer [map-entry]]
-            ;;
             [onespot.snakes :refer [->SCREAMING_SNAKE_CASE_STRING ->kebab-case-keyword ->kebab-case-string
                                     keys->kebab-case keys->camel-case]]
             [onespot.core   :as os])
   (:import [java.time Instant LocalDate]))
-
-;;; --------------------------------------------------------------------------------
-
-(defonce ^:private tmp (atom nil))
-(defn-   ^:private set-tmp!
-  [value]
-  (swap! tmp (constantly value)))
 
 ;;; --------------------------------------------------------------------------------
 
@@ -31,7 +20,7 @@
 ;;; --------------------------------------------------------------------------------
 
 (defn- kind-dispatcher
-  [entity value]
+  [entity _value]
   (let [os-entity-id (os/entity-id entity)]
     (or (-> entity ::info :type)
         (when (and (os/scalar? os-entity-id)
@@ -61,23 +50,23 @@
                       value)))))
 
 (defmethod entity->json ::os/keyword
-  [entity value]
+  [_entity value]
   (some-> value ->kebab-case-string))
 
 (defmethod entity->json ::os/local-date
-  [entity value]
+  [_entity value]
   (some-> value .toString))
 
 (defmethod entity->json ::os/instant
-  [entity value]
+  [_entity value]
   (some-> value .toString))
 
 (defmethod entity->json ::os/big-decimal
-  [entity value]
+  [_entity value]
   (some-> value .toString))
 
 (defmethod entity->json ::enum
-  [entity value]
+  [_entity value]
   (some-> value name ->SCREAMING_SNAKE_CASE_STRING))
 
 ;;; --------------------------------------------------------------------------------
@@ -103,35 +92,35 @@
                       value)))))
 
 (defmethod json->entity ::os/keyword
-  [entity value]
+  [_entity value]
   (some-> value ->kebab-case-keyword))
 
 (defmethod json->entity ::os/local-date
-  [entity value]
+  [_entity value]
   (some-> value LocalDate/parse))
 
 (defmethod json->entity ::os/instant
-  [entity value]
+  [_entity value]
   (some-> value Instant/parse))
 
 (defmethod json->entity ::os/big-decimal
-  [entity value]
+  [_entity value]
   (some-> value bigdec))
 
 (defmethod json->entity ::os/alpha-numeric
-  [entity value]
+  [_entity value]
   (let [value (some-> value (s/replace #"[^a-zA-Z0-9]" ""))]
     (when-not (s/blank? value)
       value)))
 
 (defmethod json->entity ::os/e164
-  [entity value]
+  [_entity value]
   (let [value (some-> value (s/replace #"[^+0-9]" ""))]
     (when-not (s/blank? value)
       value)))
 
 (defmethod json->entity ::enum
-  [entity value]
+  [_entity value]
   (some-> value ->kebab-case-keyword))
 
 ;;; --------------------------------------------------------------------------------

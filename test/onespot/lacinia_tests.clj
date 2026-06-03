@@ -1,12 +1,9 @@
 (ns onespot.lacinia-tests
-  (:require [clojure.pprint :refer [pprint]]
-            [clojure.test :refer [deftest testing is run-tests]]
-            [clojure.data :refer [diff]])
-  (:require [onespot.core    :as os :refer :all]
+  (:require [clojure.test :refer [deftest is]])
+  (:require [onespot.core    :as os :refer [scalar!]]
             [onespot.json    :as js]
             [onespot.lacinia :as lc]
-            ;;
-            [onespot.common :refer :all]
+            [onespot.test-utils :refer [register-all!]]
             :reload)
   (:import [java.time LocalDate]))
 

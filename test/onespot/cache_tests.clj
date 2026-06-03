@@ -1,8 +1,8 @@
 (ns onespot.cache-tests
-  (:require [clojure.test :refer [deftest testing is run-tests]])
+  (:require [clojure.test :refer [deftest is]])
   (:require [onespot.cache :as cc]
             [onespot.core  :as os]
-            [onespot.common :refer :all]
+            [onespot.test-utils :refer [register-scalars!]]
             :reload))
 
 (deftest test-cache-1
@@ -18,7 +18,8 @@
 
   (register-scalars!)
   (is (cc/cache-empty?))
-  (= (cc/pull :just-my-stuff (fn [] :test-this)) :test-this)
+  (is (= (cc/pull :just-my-stuff (fn [] :test-this))
+         :test-this))
   (register-scalars!)
   (is (cc/cache-empty?)))
 
