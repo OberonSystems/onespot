@@ -2,10 +2,17 @@
   (:require [clojure.test :refer [deftest is]])
   (:require [onespot.core       :refer [attr! rec! series!] :as os]
             [onespot.json       :refer [->clj-keys ->clj-value  ->clj
-                                        ->json-keys ->json-value ->json]]
+                                        ->json-keys ->json-value ->json]
+             :as js]
             [onespot.test-utils :refer [register-all! register-attrs! register-scalars!]]
             :reload)
   (:import [java.time LocalDate Instant]))
+
+(deftest test-get-entity-ids
+  (register-attrs!)
+  (is (= (os/entity-id :given-name) :given-name))
+  (is (= (js/entity-id :given-name) :theGivenName))
+  (is (not (os/registered? :theGivenName))))
 
 (deftest test-scalars
   (register-scalars!)
