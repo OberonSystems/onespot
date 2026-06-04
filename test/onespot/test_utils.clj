@@ -1,42 +1,27 @@
 (ns onespot.test-utils
   (:require [onespot.core :refer [attr! clear! scalar! rec! series!] :as os]
-            [onespot.validators :refer [a-set non-blank-string one-of]]
+            [onespot.validators :refer [a-set non-blank-string]]
             [onespot.lacinia  :as lc]
             [onespot.json     :as js]
             [onespot.entities :as oe]
             :reload))
 
-(def +shirt-size-enums+
-  [{:value :sm :description "Small"}
-   {:value :md :description "Medium"}
-   {:value :lg :description "Large"}
-   {:value :xl :description "Extra Large"}])
-
-(def +shirt-sizes+
-  (->> +shirt-size-enums+ (map :value) set))
-
-(defn validate-shirt-size
-  [x]
-  (when-not (+shirt-sizes+ x)
-    {:code    :bad-value
-     :message (format "Shirt Size must be one of `%s` not `%s`." +shirt-sizes+ x)
-     :value   x}))
-
 (defn register-scalars!
   []
   (clear!)
   (oe/register-common!)
-  (scalar! :string1 non-blank-string)
-  (scalar! :string2 non-blank-string
-           :label       "My Label"
-           :description "My Description")
-  ;;
-  (let [contact-types #{:mobile :email}]
-    (scalar! :contact-type-enum #(one-of % contact-types)
-             :enums contact-types))
+  (scalar! :string-type1 non-blank-string)
+  (scalar! :string-type2 non-blank-string
+           :label       "My Label For String Type 2"
+           :description "A String Type 2")
 
-  (scalar! :shirt-size-type validate-shirt-size
-           :enums +shirt-size-enums+))
+  (oe/make-enum! :size-enum [{:value :sm :description "Small"}
+                             {:value :md :description "Medium"}
+                             {:value :lg :description "Large"}
+                             {:value :xl :description "Extra Large"}])
+  (oe/make-enum! :contact-type-enum [{:value :mobile}
+                                     {:value :email}
+                                     {:value :whatsapp}]))
 
 (defn register-attrs!
   []
@@ -54,22 +39,20 @@
   (attr! :contact-type  :contact-type-enum)
   (attr! :contact-value ::os/string)
 
-  (attr! :active?        ::os/boolean
-         ::lc/entity-id :isActive
+  (attr! :active? ::os/boolean
          ::js/entity-id :isActive)
 
-  (attr! :shirt-size :shirt-size-type)
+  (attr! :size :size-enum)
 
-  (series! :s/shirt-sizes :shirt-size-type)
-  (attr! :shirt-sizes :s/shirt-sizes))
+  (series! :s/sizes :size-enum)
+  (attr! :sizes :s/sizes))
 
 (defn register-all!
   []
-  (clear!)
   (register-attrs!)
 
-  (series! :some-strings :string1)
-  (series! :tags :string1 :validator a-set)
+  (series! :some-strings :string-type1)
+  (series! :tags :string-type1 :validator a-set)
 
   (rec! :person
         [:person-id

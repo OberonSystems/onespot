@@ -6,30 +6,25 @@
             [onespot.test-utils :refer [register-all! register-attrs! register-scalars!]]
             :reload))
 
-(defn code?
-  ([validation path code]
-   (and (= path (-> validation first :path))
-        (= code (-> validation first :feedback :code))))
-  ([validation code]
-   (= (-> validation
-          first
-          :feedback
-          :code)
-      code)))
-
+(defn err?
+  [validation & {:keys [path code value]}]
+  (and (or (nil? path)  (= path  (-> validation first :path)))
+       (or (nil? code)  (= code  (-> validation first :feedback :code)))
+       (or (nil? value) (= value (-> validation first :feedback :value)))))
 ;;; --------------------------------------------------------------------------------
 
 (deftest test-scalars-1
   (register-scalars!)
-  (is (= (os/label     :string1) "String1"))
-  (is (= (os/validator :string1) vl/non-blank-string))
+  (is (= (os/label       :string-type1) "String Type1"))
+  (is (= (os/description :string-type1) nil))
+  (is (= (os/validator   :string-type1) vl/non-blank-string))
 
-  (is (= (os/label       :string2) "My Label"))
-  (is (= (os/description :string2) "My Description"))
+  (is (= (os/label       :string-type2) "My Label For String Type 2"))
+  (is (= (os/description :string-type2) "A String Type 2"))
 
-  (is (code? (validate :string1 nil) :missing-value))
-  (is (code? (validate :string1 "")  :bad-value))
-  (is (nil?  (validate :string1 "a string"))))
+  (is (err? (validate :string-type1 nil) :code :missing-value))
+  (is (err? (validate :string-type1 "")  :code :bad-value))
+  (is (nil? (validate :string-type1 "a string"))))
 
 (deftest test-attrs-1
   (register-attrs!)
@@ -37,10 +32,10 @@
   (is (= (os/label :given-name) "Given Name"))
   (is (= (os/label :family-name) "The Family Name"))
   ;;
-  (is (code? (validate :given-name nil)               :missing-value))
-  (is (code? (validate :given-name {})                :missing-value))
-  (is (code? (validate :given-name {:given-name nil}) :missing-value))
-  (is (nil?  (validate :given-name {:given-name "a given name"}))))
+  (is (err? (validate :given-name nil)               :code :missing-value))
+  (is (err? (validate :given-name {})                :code :missing-value))
+  (is (err? (validate :given-name {:given-name nil}) :code :missing-value))
+  (is (nil? (validate :given-name {:given-name "a given name"}))))
 
 (deftest test-recs-1
   (register-attrs!)
@@ -58,28 +53,42 @@
 
   (is (= (os/rec-content :person {:person-id 123 :given-name "given" :family-name "family"
                                   :other-stuff :that :gets :ignored})
-         {:person-id 123 :given-name "given", :family-name "family"}))
+         {:person-id 123
+          :given-name "given"
+          :family-name "family"}))
 
   (is (= (os/rec-identity :person {:person-id 123 :given-name "given" :family-name "family"})
          {:person-id 123}))
 
   (is (= (os/rec-values :person {:person-id 123 :given-name "given" :family-name "family"})
-         {:given-name "given" :family-name "family"}))
+         {:given-name "given"
+          :family-name "family"}))
 
-  (is (code? (validate :person {:person-id   "my-id"
-                                :given-name  "g"
+  (is (err? (validate :person {:person-id   "my-id"
+                               :given-name  "g"
+                               :nickname    "n"
+                               :family-name "f"})
+            :path [:person-id]
+            :code :bad-value
+            :value "my-id"))
+
+  (is (err? (validate :person {:person-id   10
+                               :given-name  nil
+                               :nickname    "n"
+                               :family-name "f"})
+            :path [:given-name]
+            :code :missing-value))
+  (let [errs (validate :person {:given-name  nil
                                 :nickname    "n"
-                                :family-name "f"})
-             :bad-value))
-  (is (code? (validate :person {:person-id   10
-                                :given-name  nil
-                                :nickname    "n"
-                                :family-name "f"})
-             :missing-value))
-  (is (code? (validate :person {:given-name  nil
-                                :nickname    "n"
-                                :family-name "f"})
-             :missing-attr))
+                                :family-name "f"})]
+    (is (err? errs
+              ; FIXME: This should include the path
+              ;; :path [:person-id]
+              :code :missing-attr))
+    (is (err? (drop 1 errs)
+              :path [:given-name]
+              :code :missing-value)))
+
   (is (nil? (validate :person {:person-id   10
                                :given-name  "g"
                                :nickname    "n"
@@ -94,19 +103,19 @@
            [:person-id :given-name :family-name :contact-info]
            :identity-ids [:person-id])
 
-  (is (code? (validate :person {:person-id 1234
-                                :given-name "gn"
-                                :family-name "fn"
-                                :contact-info {:contact-type :mobilecc
-                                               :contact-value "0123 123 123"}})
-             :bad-value))
+  (is (err? (validate :person {:person-id 1234
+                               :given-name "gn"
+                               :family-name "fn"
+                               :contact-info {:contact-type :mobilecc
+                                              :contact-value "0123 123 123"}})
+            :code :bad-value))
 
-  (is (code? (validate :person {:person-id 1234
-                                :given-name "gn"
-                                :family-name "fn"
-                                :contact-info nil})
-             [:contact-info]
-             :missing-value))
+  (is (err? (validate :person {:person-id 1234
+                               :given-name "gn"
+                               :family-name "fn"
+                               :contact-info nil})
+            :path [:contact-info]
+            :code :missing-value))
 
   (is (nil? (validate :person {:person-id 1234
                                :given-name "gn"
@@ -129,12 +138,12 @@
                               :message "Family Name must be 'fn'"
                               :value family-name})))
 
-  (is (code? (validate :person {:person-id 1234
-                                :given-name "gn"
-                                :family-name "fn"
-                                :contact-info {:contact-type :mobilecc
-                                               :contact-value "0123 123 123"}})
-             :bad-value))
+  (is (err? (validate :person {:person-id 1234
+                               :given-name "gn"
+                               :family-name "fn"
+                               :contact-info {:contact-type :mobilecc
+                                              :contact-value "0123 123 123"}})
+            :code :bad-value))
 
   (is (nil? (validate :person {:person-id 1234
                                :given-name "gn"
@@ -147,35 +156,35 @@
                                :family-name "fn"
                                :contact-info nil})))
 
-  (is (code? (validate :person {:person-id 1234
-                                :given-name "gn"
-                                :family-name "FN-BAD"
-                                :contact-info nil})
-             :bad-value)))
+  (is (err? (validate :person {:person-id 1234
+                               :given-name "gn"
+                               :family-name "FN-BAD"
+                               :contact-info nil})
+            :code :bad-value)))
 
 (deftest test-series-1
   (register-all!)
 
-  (is (code? (validate :some-strings nil)
-             :missing-value))
+  (is (err? (validate :some-strings nil)
+            :code :missing-value))
 
-  (is (code? (validate :some-strings [])
-             :empty-value))
+  (is (err? (validate :some-strings [])
+            :code :empty-value))
 
-  (is (code? (validate :some-strings ["test" :this])
-             [1]
-             :bad-value))
+  (is (err? (validate :some-strings ["test" :this])
+            :path [1]
+            :code :bad-value))
 
   (is (nil? (validate :some-strings ["asdf" "asdf"])))
 
   ;; Should fail as `:this` should be a string.
-  (is (code? (validate :tags ["test" :this])
-             [1]
-             :bad-value))
+  (is (err? (validate :tags ["test" :this])
+            :path [1]
+            :code :bad-value))
 
   ;; Should fail as it isn't a set.
-  (is (code? (validate :tags ["this" "that"])
-             :bad-type))
+  (is (err? (validate :tags ["this" "that"])
+            :code :bad-type))
 
   (is (nil? (validate :tags #{"this" "that"}))))
 
@@ -187,30 +196,30 @@
 
   (os/rec!    :person [:given-name :contact-infos])
 
-  (is (code? (validate :person {:given-name "gn"
-                                :contact-infos []})
-             [:contact-infos]
-             :empty-value))
+  (is (err? (validate :person {:given-name "gn"
+                               :contact-infos []})
+            :path [:contact-infos]
+            :code :empty-value))
 
   (is (nil? (validate :person {:given-name "gn"
                                :contact-infos [{:contact-type  :email
                                                 :contact-value "some@theplace.com"}]})))
 
-  (is (code? (validate :person {:given-name "gn"
-                                :contact-infos [{:contact-type  :emailxx
-                                                 :contact-value "some@theplace.com"}]})
-             [:contact-infos 0 :contact-type]
-             :bad-value))
+  (is (err? (validate :person {:given-name "gn"
+                               :contact-infos [{:contact-type  :emailxx
+                                                :contact-value "some@theplace.com"}]})
+            :path [:contact-infos 0 :contact-type]
+            :code :bad-value))
 
-  (is (code? (validate :person {:given-name "gn"
-                                :contact-infos []})
-             [:contact-infos]
-             :empty-value))
+  (is (err? (validate :person {:given-name "gn"
+                               :contact-infos []})
+            :path [:contact-infos]
+            :code :empty-value))
 
-  (is (code? (validate :person {:given-name "gn"
-                                :contact-infos [{}]})
-             [:contact-infos 0]
-             :empty-value)))
+  (is (err? (validate :person {:given-name "gn"
+                               :contact-infos [{}]})
+            :path [:contact-infos 0]
+            :code :empty-value)))
 
 (deftest test-walking-recs
   (register-all!)
