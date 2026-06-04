@@ -12,12 +12,12 @@
 
   (is (= (->json-value ::os/boolean true) true))
   (is (= (->json-value ::os/string "a string") "a string"))
-  (is (= (->json-value :string1 "a string") "a string"))
-  (is (= (->json-value :shirt-size-type :sm) "SM"))
+  (is (= (->json-value :string-type1 "a string") "a string"))
+  (is (= (->json-value :size-enum :sm) "SM"))
 
   (is (= (->clj-value ::os/boolean true) true))
-  (is (= (->clj-value :string1 "a string") "a string"))
-  (is (= (->clj-value :shirt-size-type "SM") :sm))
+  (is (= (->clj-value :string-type1 "a string") "a string"))
+  (is (= (->clj-value :size-enum "SM") :sm))
 
   (is (= (->clj-value ::os/local-date "2024-01-01")
          (LocalDate/parse "2024-01-01")))
@@ -36,28 +36,28 @@
     (is (= (->json-value :now inst-obj) inst-str))
     (is (= (->clj-value  :now inst-str) inst-obj)))
 
-  (is (= (->json-value :given-name   "my name is ...") "my name is ..."))
-  (is (= (->json-value :active?      true)             true))
-  (is (= (->json-value :shirt-size   :sm)              "SM"))
+  (is (= (->json-value :given-name "my name is ...") "my name is ..."))
+  (is (= (->json-value :active?    true)             true))
+  (is (= (->json-value :size       :sm)              "SM"))
 
-  (is (= (->clj-value :given-name   "my name is ...") "my name is ..."))
-  (is (= (->clj-value :active?      true)             true))
-  (is (= (->clj-value :shirt-size   "SM")             :sm)))
+  (is (= (->clj-value :given-name "my name is ...") "my name is ..."))
+  (is (= (->clj-value :active?    true)             true))
+  (is (= (->clj-value :size       "SM")             :sm)))
 
 (deftest test-recs
   (register-all!)
-  (rec! :person1 [:given-name :active? :shirt-size])
-  (rec! :person2 [:given-name :active? :shirt-sizes])
+  (rec! :person1 [:given-name :active? :size])
+  (rec! :person2 [:given-name :active? :sizes])
 
-  (let [core {:given-name   "Bob" :active?  false :shirt-size :sm}
-        json {:theGivenName "Bob" :isActive false :shirtSize  :sm}]
-    (is (= (->json-keys core) json))
-    (is (= (->clj-keys json) core)))
+  (let [clj  {:given-name   "Bob" :active?  false :size :sm}
+        json {:theGivenName "Bob" :isActive false :size :sm}]
+    (is (= (->json-keys clj) json))
+    (is (= (->clj-keys json) clj)))
 
-  (let [core {:given-name   "Bob" :active?  false :shirt-sizes [:sm :lg]}
-        json {:theGivenName "Bob" :isActive false :shirtSizes  ["SM" "LG"]}]
-    (is (= (->> (->json-value :person2 core) ->json-keys)  json))
-    (is (= (->> json ->clj-keys (->clj-value :person2)) core)))
+  (let [clj  {:given-name   "Bob" :active?  false :sizes [:sm :lg]}
+        json {:theGivenName "Bob" :isActive false :sizes  ["SM" "LG"]}]
+    (is (= (->> (->json-value :person2 clj) ->json-keys)  json))
+    (is (= (->> json ->clj-keys (->clj-value :person2)) clj)))
 
   ;; Reading/Writing when entity has additional readonly attributes
   (is (= (->> (->json-value :person-with-readonly {:person-id 1234 :given-name "Bob" :family-name "Jane"})
@@ -143,17 +143,17 @@
 
 (deftest test-series
   (register-attrs!)
-  (series! :strings :string1)
+  (series! :strings :string-type1)
   (is (= (->json-value :strings ["one" "two"]) ["one" "two"]))
 
   (series! :booleans ::os/boolean)
   (is (= (->json-value :booleans [true true false]) [true true false]))
 
-  (rec! :person [:given-name :active? :shirt-sizes])
+  (rec! :person [:given-name :active? :sizes])
   (series! :people :person)
-  (is (= (->> [{:given-name "Bob"  :active? false :shirt-sizes [:sm :lg]}
-               {:given-name "Jane" :active? true  :shirt-sizes [:sm :xl]}]
+  (is (= (->> [{:given-name "Bob"  :active? false :sizes [:sm :lg]}
+               {:given-name "Jane" :active? true  :sizes [:sm :xl]}]
               (->json-value :people)
               ->json-keys)
-         [{:theGivenName "Bob"  :isActive false :shirtSizes ["SM" "LG"]}
-          {:theGivenName "Jane" :isActive true  :shirtSizes ["SM" "XL"]}])))
+         [{:theGivenName "Bob"  :isActive false :sizes ["SM" "LG"]}
+          {:theGivenName "Jane" :isActive true  :sizes ["SM" "XL"]}])))

@@ -58,7 +58,7 @@
         [:person-id
          :given-name
          :family-name
-         :shirt-size
+         :size
          :dob
          :active?]
         :identity-ids [:person-id]
