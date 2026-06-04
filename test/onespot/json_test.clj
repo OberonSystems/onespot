@@ -157,3 +157,8 @@
               ->json-keys)
          [{:theGivenName "Bob"  :isActive false :sizes ["SM" "LG"]}
           {:theGivenName "Jane" :isActive true  :sizes ["SM" "XL"]}])))
+
+(deftest test-round-trips
+  (register-attrs!)
+  (let [clj {:given-name "Jane" :active? true  :sizes [:sm :xl]}]
+    (is (= clj (-> clj ->json ->clj)))))
