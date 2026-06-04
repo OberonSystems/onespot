@@ -11,11 +11,6 @@
 
 ;;; --------------------------------------------------------------------------------
 
-(defonce ^:private tmp      (atom nil))
-(defn-   ^:private set-tmp! [value] (swap! tmp (constantly value)))
-
-;;; --------------------------------------------------------------------------------
-
 (defn execute-sql
   [sql & [debug?]]
   (let [[sql & params :as query] (hsql/format sql :pretty debug?)]
@@ -133,7 +128,7 @@
 
 ;;; --------------------------------------------------------------------------------
 
-(defmulti fetch (fn [kind & [matching & {:as opts}]]
+(defmulti fetch (fn [kind & [_matching & {:as _opts}]]
                   (or (when-let [entity (and (os/registered? kind)
                                              (os/pull kind))]
                         (or (-> entity ::info    :collection)

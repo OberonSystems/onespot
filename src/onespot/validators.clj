@@ -1,6 +1,5 @@
 (ns onespot.validators
   (:require [clojure.string :as s]
-            ;;
             [onespot.core :as os])
   (:import [java.time Instant LocalDate]))
 

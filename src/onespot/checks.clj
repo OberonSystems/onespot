@@ -26,7 +26,7 @@
 ;;;
 
 (defn command-type-dispatcher
-  [{:keys [command-type] :as command}]
+  [{:keys [command-type] :as _command}]
   command-type)
 
 (defmulti check-command

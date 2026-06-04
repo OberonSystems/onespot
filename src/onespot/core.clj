@@ -1,9 +1,6 @@
 (ns onespot.core
-  (:require [clojure.pprint :refer [pprint]]
-            [clojure.set :refer [subset? intersection union difference]]
-            ;;
+  (:require [clojure.set :refer [subset? intersection union difference]]
             [oberon.utils :refer [nil-when-> hash-map* capitalize-keyword]]
-            ;;
             [onespot.cache :as cc]))
 
 ;;;
@@ -163,7 +160,8 @@
 (defn label
   [entity-id]
   (when-not (registered? entity-id)
-    (throw (ex-info (format "Can't find/compute a label for an unregistered entity: `%s`." entity-id))))
+    (throw (ex-info (format "Can't find/compute a label for an unregistered entity: `%s`." entity-id)
+                    {:entity-id entity-id})))
   (or (-> entity-id canonical-entity-id pull :label)
       (capitalize-keyword entity-id)))
 
@@ -183,8 +181,8 @@
   [entity-id validator & {:as info}]
   (throw-when-registered :scalar entity-id)
   (push entity-id :scalar (assoc info
-                                  :entity-id entity-id
-                                  :validator validator)))
+                                 :entity-id entity-id
+                                 :validator validator)))
 
 ;;;
 
@@ -195,8 +193,8 @@
     (throw (ex-info (format "Attr `%s` must be associated with a scalar, rec or series not: `%s`." entity-id attr-entity-id)
                     {:entity-id entity-id :attr-entity-id attr-entity-id})))
   (push entity-id :attr (assoc info
-                                :entity-id      entity-id
-                                :attr-entity-id attr-entity-id)))
+                               :entity-id      entity-id
+                               :attr-entity-id attr-entity-id)))
 
 (defn attr-entity-id
   [entity-id]
@@ -215,8 +213,8 @@
     (throw (ex-info (format "Series `%s` must refer to a scalar or a rec not: `%s`." entity-id series-entity-id)
                     {:entity-id entity-id :series-entity-id series-entity-id})))
   (push entity-id :series (assoc info
-                                  :entity-id        entity-id
-                                  :series-entity-id series-entity-id)))
+                                 :entity-id        entity-id
+                                 :series-entity-id series-entity-id)))
 
 (defn series-entity-id
   [entity-id]
@@ -283,13 +281,13 @@
                       {:entity-id entity-id :readonly-identity-ids readonly-identity-ids})))
 
     (push entity-id :rec (assoc info
-                                 :entity-id    entity-id
-                                 :attr-ids     attr-ids
-                                 :identity-ids identity-ids
-                                 :value-ids    value-ids
-                                 :optional-set (-> optional-set (nil-when-> empty?))
-                                 :readonly-set (-> readonly-set (nil-when-> empty?))
-                                 :validator    validator))))
+                                :entity-id    entity-id
+                                :attr-ids     attr-ids
+                                :identity-ids identity-ids
+                                :value-ids    value-ids
+                                :optional-set (-> optional-set (nil-when-> empty?))
+                                :readonly-set (-> readonly-set (nil-when-> empty?))
+                                :validator    validator))))
 
 ;;;
 
@@ -385,8 +383,8 @@
   (-> entity-id rec :optional-set))
 
 (defn optional?
-  [{:keys [optional-set] :as rec}
-   {attr-id :entity-id :as attr}]
+  [{:keys [optional-set] :as _rec}
+   {attr-id :entity-id :as _attr}]
   (contains? optional-set attr-id))
 
 (defn required?

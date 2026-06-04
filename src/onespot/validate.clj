@@ -1,10 +1,7 @@
 (ns onespot.validate
-  (:require [oberon.utils :refer [nil-when->]]
-            [onespot.core :as os]))
+  (:require [onespot.core :as os]))
 
-;;;
-
-(def ^:dynamic *feedback*)
+(def ^:dynamic *feedback* nil)
 
 (defn add-feedback!
   [feedback]
@@ -16,7 +13,7 @@
 ;;;
 
 (defn nil-check
-  [{:keys [entity-id] :as entity} value path]
+  [{:keys [entity-id] :as _entity} value path]
   (when (nil? value)
     (add-feedback! {:path     path
                     :feedback {:entity-id entity-id
@@ -24,7 +21,7 @@
                                :message   "Value cannot be nil."}})))
 
 (defn empty-check
-  [{:keys [entity-id] :as entity} value path]
+  [{:keys [entity-id] :as _entity} value path]
   (when (empty? value)
     (add-feedback! {:path     path
                     :feedback {:entity-id entity-id
@@ -32,7 +29,7 @@
                                :message   "Value cannot be empty."}})))
 
 (defn attr-check
-  [{:keys [entity-id] :as entity} value path]
+  [{:keys [entity-id] :as _entity} value path]
   (when-not (contains? value entity-id)
     (add-feedback! {:path     path
                     :feedback {:entity-id entity-id
@@ -41,7 +38,7 @@
                                :value     value}})))
 
 (defn validator-check
-  [{:keys [entity-id validator] :as entity} value path]
+  [{:keys [entity-id validator] :as _entity} value path]
   (when-let [feedback (and validator (validator value))]
     (add-feedback! {:path     path
                     :feedback (merge {:entity-id entity-id

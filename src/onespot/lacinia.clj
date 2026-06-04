@@ -1,11 +1,10 @@
 (ns onespot.lacinia
-  (:require [clojure.string :as s]
-            [clojure.walk :refer [postwalk]]
+  (:require [clojure.walk :refer [postwalk]]
             [clojure.pprint :refer [pprint]]
             ;;
-            [oberon.utils :refer [nil-when-> nil-when->> map-entry hash-map*]]
+            [oberon.utils :refer [nil-when-> nil-when->> hash-map*]]
             ;;
-            [onespot.snakes :refer [->kebab-case-keyword ->PascalCaseKeyword ->camelCaseKeyword ->SCREAMING_SNAKE_CASE_KEYWORD
+            [onespot.snakes :refer [->PascalCaseKeyword ->camelCaseKeyword ->SCREAMING_SNAKE_CASE_KEYWORD
                                     keys->camel-case keys->kebab-case]]
             [onespot.cache :as cc]
             [onespot.core  :as os]
@@ -13,16 +12,11 @@
 
 ;;; --------------------------------------------------------------------------------
 
-(defonce ^:private tmp      (atom nil))
-(defn-   ^:private set-tmp! [value] (swap! tmp (constantly value)))
-
-;;; --------------------------------------------------------------------------------
-
 (defn extract-map-entries
   [m extract?]
   (let [result (atom [])]
     (postwalk (fn [x]
-                (if (and (map-entry? x)
+                (when (and (map-entry? x)
                          (extract? x))
                   (swap! result conj x))
                 x)
@@ -215,7 +209,7 @@
 
 (defn compute-gql-args
   [schema]
-  (->> (extract-map-entries schema (fn [[k v]]
+  (->> (extract-map-entries schema (fn [[_k v]]
                                      (and (map? v)
                                           (contains? v :args))))
        (map (fn [[k v]]
@@ -297,7 +291,7 @@
 
 (defn compute-gql-returns
   [schema]
-  (->> (extract-map-entries schema (fn [[k v]]
+  (->> (extract-map-entries schema (fn [[_k v]]
                                      (and (map? v)
                                           (contains? v :type))))
        (map second)
@@ -311,13 +305,13 @@
 
 (defn end-point->gql
   [end-point-name
-   {:keys [type args resolve] :as end-point}
+   {:keys [type args _resolve] :as _end-point}
    end-point-type-map
    end-point-arg-map]
   {:type (get end-point-type-map type)
    :args (->> args
               (map (fn [[k _]]
-                     (let [{:keys [arg-name arg-spec] :as arg-type} (get end-point-arg-map [end-point-name k])]
+                     (let [{:keys [arg-name arg-spec] :as _arg-type} (get end-point-arg-map [end-point-name k])]
                        [arg-name arg-spec])))
               (into {}))})
 
@@ -417,9 +411,8 @@
   [schema]
   (let [gql-args    (compute-gql-args    schema)
         gql-returns (compute-gql-returns schema)
-        ;;
-        get-attr-ids   (fn [entity-id]
-                         (os/rec-attr-ids entity-id :readonly? true))
+        ; get-attr-ids   (fn [entity-id]
+        ;                  (os/rec-attr-ids entity-id :readonly? true))
         out-entity-ids (os/walk-entities (->> gql-returns
                                               (map second)
                                               (map :entity-id)
@@ -464,7 +457,7 @@
 (defn resolvable?
   [x]
   (and (map-entry? x)
-       (let [[k v] x]
+       (let [[_k v] x]
          (and (map? v)
               (contains? v :resolve)))))
 
@@ -506,7 +499,7 @@
                                   (map (juxt :clj-arg-id :entity-id))
                                   (into {}))]))
                      (into {}))
-        returns (->> (extract-map-entries schema (fn [[k v]]
+        returns (->> (extract-map-entries schema (fn [[_k v]]
                                                    (and (map? v)
                                                         (contains? v :type))))
                      (map (fn [[k v]]

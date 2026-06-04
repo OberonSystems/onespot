@@ -162,7 +162,7 @@
                              :many?      false
                              :optional?  false}]}))
     ;;
-    (let [{:keys [enums objects input-objects queries mutations] :as gql} (lc/schema->gql schema)]
+    (let [{:keys [enums objects input-objects queries mutations] :as _gql} (lc/schema->gql schema)]
       (is (= (keys enums)         [:ShirtSizeType]))
       (is (= (keys objects)       [:PersonOut]))
       (is (= (keys input-objects) [:PersonIn]))
@@ -205,8 +205,7 @@
             :given-name    "given-name"
             :family-name   "family-name"}))
 
-    (is (= (->> (lc/->core-keys a1)
-                js/->core)
+    (is (= (->> (lc/->core-keys a1))
            {:native-int    3
             :native-string "test"
             :given-name    "given-name"
@@ -237,8 +236,7 @@
                      :dob         "2022-01-01"
                      :active?     true}}))
 
-    (is (= (->> (lc/->core-keys a1)
-                js/->core)
+    (is (= (->> (lc/->core-keys a1))
            {:person {:person-id   3
                      :given-name  "given-name"
                      :family-name "family-name"

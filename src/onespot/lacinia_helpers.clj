@@ -1,25 +1,11 @@
 (ns onespot.lacinia-helpers
-  (:require [clojure.string :as s]
-            [clojure.pprint :refer [pprint]]
+  (:require [clojure.pprint :refer [pprint]]
             [clojure.stacktrace :refer [print-stack-trace]]
-            ;;
             [taoensso.timbre :as log]
-            ;;
-            [com.walmartlabs.lacinia :as ql]
             [com.walmartlabs.lacinia.resolve :refer [resolve-as]]
-            ;;
-            [oberon.utils :refer [dump-> dump->> canonical-values]]
-            ;;
-            [onespot.core     :as os]
+            [oberon.utils :refer [canonical-values]]
             [onespot.json     :as js]
-            [onespot.lacinia  :as lc]
-            [onespot.postgres :as pg]
-            [onespot.honeysql :as hs]))
-
-;;; --------------------------------------------------------------------------------
-
-(defonce ^:private tmp      (atom nil))
-(defn-   ^:private set-tmp! [value] (swap! tmp (constantly value)))
+            [onespot.lacinia  :as lc]))
 
 ;;; --------------------------------------------------------------------------------
 
@@ -77,7 +63,7 @@
             (resolve-as nil {:message "An error has occurred, please try again later and/or contact support."})))))))
 
 (defn wrap-resolve-safely
-  [{:keys [resolve] :as record} & {:keys [verbose?] :as options}]
+  [{:keys [resolve] :as record} & {:keys [verbose?] :as _options}]
   (assoc record :resolve (resolve-safely resolve verbose?)))
 
 ;;;
@@ -98,7 +84,7 @@
                          (when errors {:errors errors}))))
 
 (defn resolve-with-error
-  [{:keys [accepted? results]}]
+  [{:keys [_accepted? results]}]
   (let [{:keys [command errors exception]} (->> results
                                                 (filter #(or (contains? % :errors)
                                                              (contains? % :exception)))

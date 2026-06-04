@@ -2,38 +2,20 @@
   (:require [clojure.string :as s]
             [clojure.core.memoize :as m]
             [clojure.edn :as edn]
-            ;;
             [taoensso.timbre :as log]
-            ;;
             [next.jdbc            :as jdbc]
             [next.jdbc.sql        :as sql]
-            [next.jdbc.prepare    :as p]
             [next.jdbc.result-set :as rs]
-            [next.jdbc.date-time  :as jdbc-dt]
-            ;;
-            [oberon.utils :refer [dump-> dump->> nil-when->> dissoc*]]
+            [oberon.utils :refer [nil-when->> dissoc*]]
             [onespot.cache :as cc]
             [onespot.core  :as os]
             [onespot.snakes :refer [->kebab-case-keyword ->snake_case_keyword ->snake_case_string ->SCREAMING_SNAKE_CASE_STRING]])
   (:import [java.sql
             Date Timestamp
-            Array
-            Clob
-            PreparedStatement
-            ResultSet ResultSetMetaData
-            Statement
-            SQLException]
+            ResultSet ResultSetMetaData ]
            [org.postgresql.util PGobject]
-           ;;
            [java.time LocalDate LocalDateTime Instant ZoneId]
            [java.time.format DateTimeFormatter]))
-
-;;; --------------------------------------------------------------------------------
-
-(defonce ^:private tmp (atom nil))
-(defn-   ^:private set-tmp!
-  [value]
-  (swap! tmp (constantly value)))
 
 ;;; --------------------------------------------------------------------------------
 ;;  Default config for dates, extended by jdbc.next but not to what we
@@ -62,8 +44,8 @@
 
 ;;; --------------------------------------------------------------------------------
 
-(def ^:dynamic *datasource*)
-(def ^:dynamic *connection*)
+(def ^:dynamic *datasource* nil)
+(def ^:dynamic *connection* nil)
 
 (defn get-datasource [] *datasource*)
 (defn get-connection [] *connection*)
@@ -236,23 +218,23 @@
 
 ;;;
 
-(defmulti entity->db (fn [{:keys [entity-id] ::keys [info] :as entity} v]
+(defmulti entity->db (fn [{:keys [entity-id] ::keys [info] :as _entity} _v]
                        (or (:type info) entity-id)))
 
 (defmethod entity->db :default
-  [entity v]
+  [_entity v]
   (clj->db v))
 
 (defmethod entity->db ::os/edn-map
-  [entity v]
+  [_entity v]
   (pr-str v))
 
 (defmethod entity->db ::os/keyword
-  [entity v]
+  [_entity v]
   (name v))
 
 (defmethod entity->db ::ltree
-  [entity v]
+  [_entity v]
   (make-ltree v))
 
 (defmethod entity->db ::enum
@@ -263,40 +245,40 @@
              v))
 
 (defmethod entity->db ::keyword-array
-  [entity v]
+  [_entity v]
   (->> v
        (map name)
        (make-pg-array "TEXT")))
 
 (defmethod entity->db ::text-array
-  [entity v]
+  [_entity v]
   (make-pg-array "TEXT" v))
 
 (defmethod entity->db ::int-array
-  [entity v]
+  [_entity v]
   (make-pg-array "INT" v))
 
 (defmethod entity->db ::date-array
-  [entity v]
+  [_entity v]
   (make-pg-array "DATE" (map clj->db v)))
 
 (defmethod entity->db ::date-range
-  [entity {:keys [date-from date-to]}]
+  [_entity {:keys [date-from date-to]}]
   (make-daterange [date-from date-to]))
 
 (defmethod entity->db ::instant-array
-  [entity v]
+  [_entity v]
   ;; FIXME:: Should these be TIMESTAMPS?
   (make-pg-array "TIMESTAMPTZ" (map clj->db v)))
 
 (defmethod entity->db ::edn-map
-  [entity v]
+  [_entity v]
   (pr-str v))
 
 ;;;
 
 (defn record->row
-  [record & {:keys [domain db-names?]}]
+  [record & {:keys [_domain db-names?]}]
   (->> record
        (map (fn [[k v]]
               (cond
@@ -339,38 +321,38 @@
 
 ;;;
 
-(defmulti db->entity (fn [{:keys [entity-id] ::keys [info] :as entity} v]
+(defmulti db->entity (fn [{:keys [entity-id] ::keys [info] :as _entity} _v]
                        (or (:type info) entity-id)))
 
 (defmethod db->entity :default
-  [entity-id v]
+  [_entity-id v]
   (db->clj v))
 
 (defmethod db->entity ::os/keyword
-  [entity-id v]
+  [_entity-id v]
   (keyword v))
 
 (defmethod db->entity ::os/edn-map
-  [entity v]
+  [_entity v]
   (when v (edn/read-string v)))
 
 (defmethod db->entity ::enum
-  [entity-id v]
+  [_entity-id v]
   (keyword v))
 
 (defmethod db->entity ::keyword-array
-  [entity-id v]
+  [_entity-id v]
   (->> (.getArray v)
        (map keyword)))
 
 (defmethod db->entity ::date-range
-  [entity-id v]
+  [_entity-id v]
   (let [[date-from date-to] v]
     {:date-from date-from
      :date-to   date-to}))
 
 (defmethod entity->db ::edn-map
-  [entity v]
+  [_entity v]
   (edn/read-string v))
 
 (defn make-row->record-attr-map
@@ -408,7 +390,7 @@
 ;;; --------------------------------------------------------------------------------
 ;;; READING FROM DATABASE
 
-(defmulti read-object (fn [object-type object]
+(defmulti read-object (fn [object-type _object]
                         object-type))
 
 (defmethod read-object :default
@@ -428,8 +410,8 @@
                       (read-object (-> object get-pg-type keyword) object))]
   (extend-protocol rs/ReadableColumn
     PGobject
-    (read-column-by-label [^PGobject object _]          (object-reader object))
-    (read-column-by-index [^PGobject object rsmeta idx] (object-reader object))))
+    (read-column-by-label [^PGobject object _]            (object-reader object))
+    (read-column-by-index [^PGobject object _rsmeta _idx] (object-reader object))))
 
 ;;; --------------------------------------------------------------------------------
 
@@ -441,7 +423,7 @@
         (range 1 (inc (.getColumnCount rsmeta)))))
 
 (defn as-sane-maps
-  [^ResultSet rs opts]
+  [^ResultSet rs _opts]
   (let [rsmeta (.getMetaData rs)
         cols   (get-column-names rsmeta)]
     (rs/->MapResultSetBuilder rs rsmeta cols)))

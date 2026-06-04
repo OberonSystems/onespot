@@ -4,13 +4,6 @@
 
 ;;; --------------------------------------------------------------------------------
 
-(defonce ^:private tmp (atom nil))
-(defn- set-tmp!
-  [value]
-  (swap! tmp (constantly value)))
-
-;;; --------------------------------------------------------------------------------
-
 (defmulti process-command
   "Processes the command into the database.
 
@@ -27,11 +20,11 @@
 ;;; --------------------------------------------------------------------------------
 
 (defn accepted?
-  [{:keys [accepted?] :as results}]
+  [{:keys [accepted?] :as _results}]
   accepted?)
 
 (defn results
-  [{:keys [results] :as results}]
+  [{:keys [results] :as _results}]
   results)
 
 (defn process-commands

@@ -107,7 +107,7 @@
             ::pg/info  {:type ::pg/date-range}))
 
 (defn make-enum!
-  [entity-id enums & {:keys [enum-type validator] :as options}]
+  [entity-id enums & {:keys [enum-type validator] :as _options}]
   (let [enums (os/canonicalise-enums enums)]
     (os/scalar! entity-id (or validator (vl/make-enum-one-of enums))
                 {:enums    enums
