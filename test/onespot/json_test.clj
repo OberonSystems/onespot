@@ -1,4 +1,4 @@
-(ns onespot.json-tests
+(ns onespot.json-test
   (:require [clojure.test :refer [deftest is]])
   (:require [onespot.core       :refer [attr! rec! series!] :as os]
             [onespot.json       :refer [->clj-keys ->clj-value  ->clj

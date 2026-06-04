@@ -1,4 +1,4 @@
-(ns onespot.lacinia-tests
+(ns onespot.lacinia-test
   (:require [clojure.test :refer [deftest is]])
   (:require [onespot.core    :as os :refer [scalar!]]
             [onespot.json    :as js]

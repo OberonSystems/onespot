@@ -1,4 +1,4 @@
-(ns onespot.core-tests
+(ns onespot.core-test
   (:require [clojure.test :refer [deftest is]])
   (:require [onespot.core :as os]
             [onespot.validators :as vl]
