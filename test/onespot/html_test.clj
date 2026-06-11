@@ -171,8 +171,3 @@
               ->html-keys)
          [{:the-ht-given-name "Bob"  :is-active "false" :sizes ["SM" "LG"]}
           {:the-ht-given-name "Jane" :is-active "true"  :sizes ["SM" "XL"]}])))
-#_
-(deftest test-round-trips
-  (register-attrs!)
-  (let [clj {:given-name "Jane" :active? true  :sizes [:sm :xl]}]
-    (is (= clj (-> clj ->html ->clj)))))
