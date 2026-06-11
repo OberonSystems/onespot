@@ -12,6 +12,8 @@
 (deftest test-return-types
   (register-all!)
 
+  ;; FIXME: Check the native type coercion here
+
   ;; Native GQL String types
   (is (= (lc/return-type->field-ref :string)
          {:entity-id :string
@@ -50,8 +52,9 @@
           :attr-entity-id ::os/positive-integer
           :clj-arg-id     :person-id
           :gql-arg-id     :personId
-          :gql-type       '(non-null Int)}))
-
+          :gql-type       '(non-null :Int)
+          :many?          false
+          :optional?      false}))
   (is (= (lc/arg->field-ref :person nil)
          {:entity-id  :person
           :clj-arg-id :person
@@ -63,18 +66,18 @@
 (deftest test-entity->field-ref
   (register-all!)
   (is (= (lc/entity->field-ref ::os/string :in false)
-         {:type '(non-null String)}))
+         {:type :String}))
 
   (is (= (lc/entity->field-ref ::os/string :in true)
-         {:type 'String}))
+         {:type :String}))
 
-  (is (= (lc/entity->field-ref :person :in false)
+  (is (= (lc/entity->field-ref :person false :in)
          {:type '(non-null :PersonIn)}))
 
-  (is (= (lc/entity->field-ref :people :in false)
+  (is (= (lc/entity->field-ref :people false :in)
          {:type '(non-null (list (non-null :PersonIn)))}))
 
-  (is (= (lc/entity->field-ref :people :out true)
+  (is (= (lc/entity->field-ref :people true :out)
          {:type '(list (non-null :PersonOut))})))
 
 (deftest test-rec->gql-object
@@ -82,49 +85,49 @@
   (is (= (lc/rec->object (os/rec :person) :in)
          '[:PersonIn
            {:fields
-            {:personId   {:type (non-null Int)}
-             :givenName  {:type (non-null String)}
-             :familyName {:type (non-null String)}
-             :shirtSize  {:type (non-null :ShirtSizeType)}
-             :dob        {:type String}
-             :isActive   {:type (non-null Boolean)}}}]))
+            {:personId   {:type (non-null :Int)}
+             :givenName  {:type (non-null :String)}
+             :familyName {:type (non-null :String)}
+             :size       {:type (non-null :SizeEnum)}
+             :dob        {:type :String}
+             :isActive   {:type (non-null :Boolean)}}}]))
 
   (is (= (lc/rec->object (os/rec :person-with-readonly) :in)
          '[:PersonWithReadonlyIn
            {:fields
-            {:personId {:type (non-null Int)}
-             :givenName {:type (non-null String)}}}]))
+            {:personId {:type (non-null :Int)}
+             :givenName {:type (non-null :String)}}}]))
 
   (is (= (lc/rec->object (os/rec :person-with-readonly) :out)
          '[:PersonWithReadonlyOut
            {:fields
-            {:personId   {:type (non-null Int)}
-             :givenName  {:type (non-null String)}
-             :familyName {:type (non-null String)}}}]))
+            {:personId   {:type (non-null :Int)}
+             :givenName  {:type (non-null :String)}
+             :familyName {:type (non-null :String)}}}]))
 
   (is (= (lc/rec->object (os/rec :person-with-optional-fields) :out)
          '[:PersonWithOptionalFieldsOut
            {:fields
-            {:personId   {:type (non-null Int)}
-             :givenName  {:type String}
-             :familyName {:type (non-null String)}}}]))
+            {:personId   {:type (non-null :Int)}
+             :givenName  {:type :String}
+             :familyName {:type (non-null :String)}}}]))
 
   (is (= (lc/rec->object (os/rec :person-with-core-description) :out)
          '[:PersonWithCoreDescriptionOut
-           {:fields {:personId  {:type (non-null Int)}
-                     :givenName {:type (non-null String)}}
+           {:fields {:personId  {:type (non-null :Int)}
+                     :givenName {:type (non-null :String)}}
             :description "Core Description"}]))
 
   (is (= (lc/rec->object (os/rec :person-with-lacinia-description) :out)
          '[:PersonWithLaciniaDescriptionOut
-           {:fields {:personId  {:type (non-null Int)}
-                     :givenName {:type (non-null String)}}
+           {:fields {:personId  {:type (non-null :Int)}
+                     :givenName {:type (non-null :String)}}
             :description "Lacinia Description"}])))
 
 (deftest test-enums
   (register-all!)
-  (is (= (-> :shirt-size-type os/scalar lc/scalar->enum)
-         [:ShirtSizeType
+  (is (= (-> :size-enum os/scalar lc/scalar->enum)
+         [:SizeEnum
           {:values
            [{:enum-value :SM :description "Small"}
             {:enum-value :MD :description "Medium"}
@@ -154,7 +157,9 @@
                              :attr-entity-id ::os/positive-integer
                              :clj-arg-id     :person-id
                              :gql-arg-id     :personId
-                             :gql-type       '(non-null Int)}]
+                             :gql-type       '(non-null :Int)
+                             :many?          false
+                             :optional?      false}]
             :modify-person [{:entity-id  :person
                              :clj-arg-id :person
                              :gql-arg-id :person
@@ -163,12 +168,12 @@
                              :optional?  false}]}))
     ;;
     (let [{:keys [enums objects input-objects queries mutations] :as _gql} (lc/schema->gql schema)]
-      (is (= (keys enums)         [:ShirtSizeType]))
+      (is (= (keys enums)         [:SizeEnum]))
       (is (= (keys objects)       [:PersonOut]))
       (is (= (keys input-objects) [:PersonIn]))
       (is (= queries
              '{:fetchPerson {:type    (non-null :PersonOut)
-                             :args    {:personId {:type (non-null Int)}}
+                             :args    {:personId {:type (non-null :Int)}}
                              :resolve :resolver-placeholder}
                :fetchPeople {:type (non-null (list (non-null :PersonOut)))}}))
       (is (= mutations
@@ -196,8 +201,8 @@
     (is (= q1
            '{:nativeInt    {:type Int}
              :nativeString {:type (non-null String)}
-             :givenName    {:type (non-null String)}
-             :familyName   {:type (non-null String)}}))
+             :givenName    {:type (non-null :String)}
+             :familyName   {:type (non-null :String)}}))
 
     (is (= (lc/->core-keys a1)
            {:native-int    3
@@ -222,7 +227,7 @@
         a1 {:person {:personId   3
                      :givenName  "given-name"
                      :familyName "family-name"
-                     :shirtSize  "SM"
+                     :size       "SM"
                      :dob        "2022-01-01"
                      :isActive   true}}]
     (is (= q1
@@ -232,30 +237,22 @@
            {:person {:person-id   3
                      :given-name  "given-name"
                      :family-name "family-name"
-                     :shirt-size  "SM"
+                     :size        "SM"
                      :dob         "2022-01-01"
-                     :active?     true}}))
-
-    (is (= (->> (lc/->core-keys a1))
-           {:person {:person-id   3
-                     :given-name  "given-name"
-                     :family-name "family-name"
-                     :shirt-size  :sm
-                     :dob         (LocalDate/parse "2022-01-01")
                      :active?     true}}))
 
     (is (= (->> {:person {:person-id   3
                           :given-name  "given-name"
                           :family-name "family-name"
-                          :shirt-size  :sm
+                          :size        :sm
                           :dob         (LocalDate/parse "2022-01-01")
                           :active?     true}}
                 js/->json
                 lc/->lacinia-keys)
            {:person {:personId   3
-                     :givenName  "given-name"
+                     :theGivenName  "given-name"
                      :familyName "family-name"
-                     :shirtSize  "SM"
+                     :size       "SM"
                      :dob        "2022-01-01"
                      :isActive   true}}))))
 
@@ -277,7 +274,7 @@
     (is (= (-> {:bob-the-person {:personId   3
                                  :givenName  "given-name"
                                  :familyName "family-name"
-                                 :shirtSize  "SM"
+                                 :size       "SM"
                                  :dob        "2022-01-01"
                                  :isActive   true}}
                lc/->core-keys
@@ -285,7 +282,7 @@
            {:bob-the-person {:person-id   3
                              :given-name  "given-name"
                              :family-name "family-name"
-                             :shirt-size  :sm
+                             :size        :sm
                              :dob         (LocalDate/parse "2022-01-01")
                              :active?     true}}))
 

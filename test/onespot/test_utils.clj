@@ -3,6 +3,7 @@
             [onespot.validators :refer [a-set non-blank-string]]
             [onespot.lacinia  :as lc]
             [onespot.json     :as js]
+            [onespot.html     :as ht]
             [onespot.entities :as oe]
             :reload))
 
@@ -27,7 +28,9 @@
   []
   (register-scalars!)
   (attr! :person-id   ::os/positive-integer)
-  (attr! :given-name  ::os/string ::js/entity-id :theGivenName)
+  (attr! :given-name  ::os/string
+         ::js/entity-id :theGivenName
+         ::ht/entity-id :the-ht-given-name)
   (attr! :nickname    ::os/string)
   (attr! :family-name ::os/string
          :label "The Family Name")
@@ -40,7 +43,10 @@
   (attr! :contact-value ::os/string)
 
   (attr! :active? ::os/boolean
-         ::js/entity-id :isActive)
+         ;; FIXME: the lc entity should fall back to js mapping
+         ::js/entity-id :isActive
+         ::lc/entity-id :isActive
+         ::ht/entity-id :is-active)
 
   (attr! :size :size-enum)
 

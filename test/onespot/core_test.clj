@@ -233,10 +233,10 @@
            :person-id
            :onespot.core/string
            :given-name
+           :size
            :onespot.core/local-date
            :dob
-           :shirt-size-type
-           :shirt-size
+           :size-enum
            :family-name
            :onespot.core/boolean}))
 

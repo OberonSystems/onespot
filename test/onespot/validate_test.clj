@@ -28,7 +28,7 @@
                          {:person-id   123
                           :given-name  "Jo"
                           :family-name "Blogs"
-                          :shirt-size  :xl
+                          :size        :xl
                           :dob         nil
                           :active?     true})))
 
@@ -36,7 +36,7 @@
                       {:person-id   123
                        :given-name  "Jo"
                        :family-name "Blogs"
-                       :shirt-size  :xl
+                       :size        :xl
                        :dob         nil
                        :active?     nil})
          [{:path     [:active?]
@@ -48,7 +48,7 @@
                           {:person-id   123
                            :given-name  "Jo"
                            :family-name "Blogs"
-                           :shirt-size  :xl
+                           :size        :xl
                            :dob         nil
                            :active?     :xxx})
              sfify-validators)
@@ -63,7 +63,7 @@
                           {:person-id   123
                            :given-name  "Jo"
                            :family-name "Blogs"
-                           :shirt-size  :xl
+                           :size        :xl
                            :dob         nil
                            :active?     :xxx})
              sfify-validators)

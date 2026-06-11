@@ -40,6 +40,12 @@
 (def ->SCREAMING_SNAKE_CASE_STRING
   (m/fifo csk/->SCREAMING_SNAKE_CASE_STRING {} :fifo/threshold 1024))
 
+(defn keys->ns
+  [m & {:keys [rename-map]}]
+  (cske/transform-keys (fn [k]
+                         (or (get rename-map k) k))
+                       m))
+
 (defn keys->camel-case
   [m & {:keys [rename-map]}]
   (cske/transform-keys (fn [k]
