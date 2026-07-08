@@ -7,7 +7,7 @@
 
 ;;; --------------------------------------------------------------------------------
 
-(defn entity-id
+(defn get-entity-id
   [entity-id]
   (-> entity-id os/canonical-entity-id os/pull ::entity-id))
 
@@ -32,10 +32,9 @@
 
 (defmethod entity->html :default
   [entity value]
-  ;(println (kind-dispatcher entity value) entity value)
   (when-not (nil? value)
     (case (os/kind entity)
-      :scalar value
+      :scalar value ; everything is a string in html land
       :attr   (entity->html (os/attr-entity entity) value)
       :rec    (->> (os/rec-attrs entity :readonly? true)
                    (map (fn [attr]
@@ -93,9 +92,9 @@
 
 (defmethod html->entity ::os/boolean
   [_entity value]
-  (let [value (-> value
-                  s/trim
-                  s/lower-case)]
+  (when-let [value (some-> value
+                           s/trim
+                           s/lower-case)]
     (cond
       (= value "true") true
       :else false)))
@@ -111,6 +110,10 @@
 (defmethod html->entity ::os/instant
   [_entity value]
   (some-> value Instant/parse))
+
+(defmethod html->entity ::os/positive-integer
+  [_entity value]
+  (some-> value parse-long))
 
 (defmethod html->entity ::os/big-decimal
   [_entity value]
@@ -186,8 +189,80 @@
       ->html-value
       ->html-keys))
 
+;;;
+
+(defn find-prefixed
+  [entity-id paths]
+  (let [prefix (-> (or (get-entity-id entity-id)
+                       entity-id)
+                   name)]
+    (->> paths
+         (map (fn [[path value]]
+                (when (= prefix (first path))
+                  [(rest path) value])))
+         (remove nil?))))
+
+(defn ->entity
+  [entity-id paths]
+  (case (os/kind entity-id)
+    :scalar (html->entity entity-id
+                          (-> paths first second))
+    :attr   (->> paths
+                 (find-prefixed entity-id)
+                 (->entity (os/attr-entity-id entity-id)))
+    :rec    (->> (os/rec-attr-ids entity-id)
+                 (map (fn [entity-id]
+                        [entity-id (->entity entity-id paths)]))
+                 (into {}))
+    :series (let [series-entity-id (os/series-entity-id entity-id)]
+              (->> paths
+                   ;; Extract the first element of the path
+                   (map (fn [[path value]]
+                          [(first path)
+                           [(rest path) value]]))
+                   ;; Make sure they get returned in the order they were generated.
+                   (sort-by      first)
+                   (partition-by first)
+                   (map (fn [indexed-paths]
+                          (->> indexed-paths
+                               (map second)
+                               (->entity series-entity-id))))))))
+
+; --------------------------------------------------------------------------------
+; FIXME: add a path macro builder or some such
+
+(defn compute-attr-name-map
+  []
+  (->> (os/attrs)
+       (map (fn [attr]
+              (let [entity-id    (os/entity-id  attr)
+                    ns-entity-id (get-entity-id attr)]
+                [(-> (or ns-entity-id entity-id) name)
+                 entity-id])))
+       (into {})))
+
 (defn ->clj
-  [value]
-  (-> value
-      ->clj-keys
-      ->clj-value))
+  ([params] (->clj nil params))
+  ([attr-ids params]
+   (let [attrs (compute-attr-name-map)]
+     (some->> params
+              (remove #(-> % second s/blank?))
+              (map (fn [[k v]]
+                     (let [[head & _ :as path] (s/split k #";")
+                           attr-id (attrs head)]
+                       (when (and attr-id
+                                  (or (not attr-ids)
+                                      (contains? attr-ids attr-id)))
+                         [attr-id [path v]]))))
+              (remove nil?)
+              seq
+              (sort-by      first)
+              (partition-by first)
+              (map (fn [paths]
+                     (let [entity-id (-> paths first first)]
+                       [entity-id
+                        (->> paths
+                             (map second)
+                             (->entity entity-id))])))
+              (into {})))))
+

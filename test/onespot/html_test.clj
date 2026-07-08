@@ -1,17 +1,21 @@
 (ns onespot.html-test
-  (:require [clojure.test :refer [deftest is]])
+  (:require [clojure.test :refer [deftest is]]
+            [clojure.string :as s]
+            [ring.middleware.params :refer [params-request]])
   (:require [onespot.core       :refer [attr! rec! series!] :as os]
             [onespot.html :refer [->clj-keys ->clj-value  ->clj
-                                  ->html-keys ->html-value ->html]
+                                  ->html-keys ->html-value]
              :as ht]
             [onespot.test-utils :refer [register-all! register-attrs! register-scalars!]]
             :reload)
   (:import [java.time LocalDate Instant]))
 
+; Unit Tests
+
 (deftest test-get-entity-ids
   (register-attrs!)
   (is (= (os/entity-id :given-name) :given-name))
-  (is (= (ht/entity-id :given-name) :the-ht-given-name))
+  (is (= (ht/get-entity-id :given-name) :the-ht-given-name))
   (is (not (os/registered? :the-ht-given-name))))
 
 (deftest test-scalars
@@ -35,7 +39,9 @@
   (is (= (->clj-value ::os/local-date "2024-01-01")
          (LocalDate/parse "2024-01-01")))
   (is (= (->clj-value ::os/instant "2024-01-05T23:13:57.254310Z")
-         (Instant/parse "2024-01-05T23:13:57.254310Z"))))
+         (Instant/parse "2024-01-05T23:13:57.254310Z")))
+
+  (is (= (->clj-value ::os/positive-integer "1234") 1234)))
 
 (deftest test-attrs
   (register-attrs!)
@@ -86,12 +92,12 @@
               ->html-keys)
          {:person-id 1234 :the-ht-given-name nil :family-name nil}))
   ;;
-  (is (= (->> {:person-id 1234 :the-ht-given-name "Bob" :family-Name "Jane"}
+  (is (= (->> {:person-id "1234" :the-ht-given-name "Bob" :family-Name "Jane"}
               ->clj-keys
               (->clj-value :person-with-readonly))
          {:person-id 1234 :given-name "Bob"}))
 
-  (is (= (->> {:person-id 1234}
+  (is (= (->> {:person-id "1234"}
               ->clj-keys
               (->clj-value :person-with-readonly))
          {:person-id 1234 :given-name nil})))
@@ -171,3 +177,105 @@
               ->html-keys)
          [{:the-ht-given-name "Bob"  :is-active "false" :sizes ["SM" "LG"]}
           {:the-ht-given-name "Jane" :is-active "true"  :sizes ["SM" "XL"]}])))
+
+; ------------------
+
+(defn make-params
+  [& kv]
+  (assert (-> kv count even?) "Must have an even number of key value pairs")
+  ; Could do a better job handling different types here, keep it dump
+  ; for the moment.
+  (-> {:query-string (->> kv
+                          (partition 2)
+                          (map (fn [[k v]]
+                                 (str k "=" v)))
+                          (s/join "&"))}
+      params-request
+      :params))
+
+(def p1 (make-params "string-tags;0"              "one"
+                     "string-tags;1"              "two"
+                     "manager;person-id"          "123"
+                     "manager;the-ht-given-name"  "Manager Bob"
+                     "manager;family-name"        "Smith"
+                     "manager;is-active"          "true"
+                     "manager;size"               "LG"
+                     "manager;dob"                "1990-10-10"
+                     "person-id"                  "456"
+                     "the-ht-given-name"          "Wally"
+                     "family-name"                "Waldo"))
+
+(def p2 (make-params "managers;0;person-id"          "1"
+                     "managers;0;the-ht-given-name"  "Manager Bob"
+                     "managers;0;family-name"        "Smith"
+                     "managers;0;is-active"          "true"
+                     "managers;0;size"               "LG"
+                     "managers;0;dob"                "1990-10-10"
+                       ;
+                     "managers;1;person-id"          "2"
+                     "managers;1;the-ht-given-name"  "Manager Bob"
+                     "managers;1;family-name"        "Smith"
+                     "managers;1;is-active"          "true"
+                     "managers;1;size"               "LG"
+                     "managers;1;dob"                "1990-10-10"))
+
+(def p3 (make-params "people-with-addresses;0;person-id"          "1"
+                     "people-with-addresses;0;the-ht-given-name"  "Manager Bob"
+                     "people-with-addresses;0;address;street-no"  "10"
+                     "people-with-addresses;0;address;street"     "Some St"
+                       ;
+                     "people-with-addresses;1;person-id"          "2"
+                     "people-with-addresses;1;the-ht-given-name"  "Manager Bob"
+                     "people-with-addresses;1;address;street-no"  "30"
+                     "people-with-addresses;1;address;street"     "Another St"))
+
+(deftest test->clj
+  (register-all!)
+
+  (is (= (->clj #{:manager} p1)
+         {:manager
+          {:person-id 123
+           :given-name "Manager Bob"
+           :family-name "Smith"
+           :size :lg
+           :dob (LocalDate/parse "1990-10-10")
+           :active? true}}))
+
+  (is (= (->clj  p1)
+         {:family-name "Waldo",
+          :given-name "Wally",
+          :manager
+          {:person-id 123,
+           :given-name "Manager Bob",
+           :family-name "Smith",
+           :size :lg,
+           :dob (LocalDate/parse "1990-10-10")
+           :active? true},
+          :person-id 456}))
+
+  (is (= (->clj #{:given-name} p1)
+         {:given-name "Wally"}))
+
+  (is (= (->clj #{:managers} p2)
+         {:managers
+          (list {:person-id 1,
+                 :given-name "Manager Bob",
+                 :family-name "Smith",
+                 :size :lg,
+                 :dob (LocalDate/parse "1990-10-10")
+                 :active? true}
+                {:person-id 2,
+                 :given-name "Manager Bob",
+                 :family-name "Smith",
+                 :size :lg,
+                 :dob (LocalDate/parse "1990-10-10")
+                 :active? true})}))
+
+  (is (= (->clj #{:people-with-addresses} p3)
+         {:people-with-addresses
+          (list {:person-id 1,
+                 :given-name "Manager Bob",
+                 :address {:street-no "10", :street "Some St"}}
+                {:person-id 2,
+                 :given-name "Manager Bob",
+                 :address {:street-no "30", :street "Another St"}})})))

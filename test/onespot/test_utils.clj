@@ -42,6 +42,9 @@
   (attr! :contact-type  :contact-type-enum)
   (attr! :contact-value ::os/string)
 
+  (attr! :street-no ::os/string)
+  (attr! :street ::os/string)
+
   (attr! :active? ::os/boolean
          ;; FIXME: the lc entity should fall back to js mapping
          ::js/entity-id :isActive
@@ -70,10 +73,14 @@
         :identity-ids [:person-id]
         :optional-ids [:dob])
 
+
   (rec! :new-person
         (os/rec-value-ids :person))
 
   (series! :people :person)
+
+  (attr! :manager :person)
+  (attr! :managers :people)
 
   (rec! :person-with-readonly
         [:person-id :given-name]
@@ -100,4 +107,18 @@
         [:person-id :given-name]
         :identity-ids [:person-id]
         :description "Core Description"
-        ::lc/info {:description "Lacinia Description"}))
+        ::lc/info {:description "Lacinia Description"})
+  
+  (rec! ::address
+        [:street-no
+         :street])
+  (attr! :address ::address)
+  
+  (rec! ::person-with-address
+        [:person-id
+         :given-name
+         :address]
+        :identity-ids [:person-id])
+  
+  (series! ::people-with-addresses ::person-with-address)
+  (attr! :people-with-addresses ::people-with-addresses))
