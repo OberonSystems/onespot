@@ -2,7 +2,7 @@
   (:require [clojure.test :refer [deftest is]]
             [clojure.string :as s]
             [ring.middleware.params :refer [params-request]])
-  (:require [onespot.core       :refer [attr! rec! series!] :as os]
+  (:require [onespot.core :refer [attr! rec! series!] :as os]
             [onespot.html :refer [->clj-keys ->clj-value  ->clj
                                   ->html-keys ->html-value]
              :as ht]
