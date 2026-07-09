@@ -1,5 +1,6 @@
 (ns onespot.html
   (:require [clojure.string :as s]
+            [onespot.base62 :as b62]
             [onespot.snakes :refer [->SCREAMING_SNAKE_CASE_STRING ->kebab-case-keyword ->kebab-case-string
                                     keys->ns keys->kebab-case]]
             [onespot.core   :as os])
@@ -266,3 +267,51 @@
                              (->entity entity-id))])))
               (into {})))))
 
+; --------------------------------------------------------------------------------
+
+(def ^:dynamic *nodes* nil)
+(def ^:dynamic *index* nil)
+
+(defmulti node-name
+  (fn [node]
+    (type node)))
+
+(defmethod node-name clojure.lang.Keyword
+  [node]
+  (if (os/attr? node)
+    (-> (or (get-entity-id node)
+            (os/entity-id node))
+        name)
+    (throw (ex-info (format "Node is not an attribute %s" node)
+                    {:node node}))))
+
+(defmethod node-name clojure.lang.Atom
+  [node]
+  (b62/encode @node))
+
+(defmacro with-node
+  [node & body]
+  `(binding [*nodes* (conj *nodes* ~node)]
+     ~@body))
+
+(defmacro with-indexed
+  [& body]
+  `(binding [*index* (atom -1)]
+     (with-node *index*
+       ~@body)))
+
+(defmacro with-index
+  [& body]
+  `(do
+     (swap! *index* inc)
+     ~@body))
+
+(defn path
+  [& [node]]
+  (some->> (if node
+             (conj *nodes* node)
+             *nodes*)
+           (map node-name)
+           reverse
+           (s/join ";")
+           doall))

@@ -4,7 +4,8 @@
             [ring.middleware.params :refer [params-request]])
   (:require [onespot.core :refer [attr! rec! series!] :as os]
             [onespot.html :refer [->clj-keys ->clj-value  ->clj
-                                  ->html-keys ->html-value]
+                                  ->html-keys ->html-value
+                                  with-node with-index with-indexed path]
              :as ht]
             [onespot.test-utils :refer [register-all! register-attrs! register-scalars!]]
             :reload)
@@ -279,3 +280,51 @@
                 {:person-id 2,
                  :given-name "Manager Bob",
                  :address {:street-no "30", :street "Another St"}})})))
+
+(deftest test-paths
+  (register-all!)
+  (is (= (with-node :manager
+           (with-node :given-name
+             (path)))
+         "manager;the-ht-given-name"))
+
+  (is (= (with-node :managers
+           (with-indexed
+             (with-index :ignored)
+             (with-index :ignored)
+             (with-index
+               (with-node :given-name
+                 (path)))))
+         "managers;02;the-ht-given-name")))
+
+(deftest test-readers
+
+  ; [:div {:name #named :managers}
+  ;  #indexed
+  ;  (->> (range 3)
+  ;       (map (fn [{:keys [given-name family-name]}]
+  ;              [:div
+  ;               [:input {:name #path :given-name :value (->html given-name))}]
+  ;               [:input {:name #path :family-name :value (->html family-name))}]
+  ;               ]
+  ;              )))
+  ;  ]
+
+  #_
+  (with-node :managers
+    [:div {:name (path)}
+     (with-indexed
+       (->> (range 3)
+            (map (fn [_]
+                   (with-index
+                     [:div {:name (path)}
+                      [:input {:name (path :given-name)}]
+                      [:input {:name (path :family-name)}]
+                      (with-node :address
+                        [:div
+                         [:input {:name (path :street-no)}]
+                         [:input {:name (path :street)}]])])))
+            doall))]))
+
+
+
