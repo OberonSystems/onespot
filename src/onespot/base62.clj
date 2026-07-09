@@ -7,11 +7,11 @@
 ;; 1. Map each character back to its index for O(1) decoding lookups
 (def char->idx (into {} (map-indexed (fn [idx c] [c idx]) alphabet)))
 
-(defn int->sortable-str
+(defn encode
   "Converts an integer into a sorted Base62 string of length `len`.
-   Defaults `len` to 3 if not provided."
+   Defaults `len` to 2 if not provided."
   ([num]
-   (int->sortable-str num 3))
+   (encode num 2))
   ([num len]
    {:pre [(>= num 0)
           (< num (Math/pow base len))]}
@@ -24,7 +24,7 @@
               (dec step)
               (conj result (get alphabet (rem n base))))))))
 
-(defn str->int
+(defn decode
   "Converts a sorted Base62 string back into its original integer.
    The maximum base configuration is automatically derived from the string length."
   [s]
@@ -42,16 +42,16 @@
 (comment
   ; 1. Round-trip verification for default 3-character strings
   (let [original-int 154321
-        encoded-str  (int->sortable-str original-int) ; -> "a6n"
-        decoded-int  (str->int encoded-str)]
+        encoded-str  (encode original-int) ; -> "a6n"
+        decoded-int  (decode encoded-str)]
     (println "3-Char Original:" original-int)
     (println "3-Char Encoded :" encoded-str)
     (println "3-Char Decoded :" decoded-int))
 
   ; 2. Round-trip verification for custom 6-character strings
   (let [original-int 5000000000
-        encoded-str  (int->sortable-str original-int 6) ; -> "05bbt2"
-        decoded-int  (str->int encoded-str)]
+        encoded-str  (encode original-int 6) ; -> "05bbt2"
+        decoded-int  (decode encoded-str)]
     (println "\n6-Char Original:" original-int)
     (println "6-Char Encoded :" encoded-str)
     (println "6-Char Decoded :" decoded-int)))
