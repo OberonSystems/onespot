@@ -18,6 +18,42 @@
       os/canonical-entity-id
       os/pull))
 
+(defn get-label
+  [entity-id]
+  (when-let [entity-id (and (os/registered? entity-id)
+                            (os/canonical-entity-id entity-id))]
+    (or (-> entity-id os/pull ::info :label)
+        (os/label entity-id))))
+
+(defn get-input-type
+  [entity-id]
+  (when-let [entity-id (and (os/registered? entity-id)
+                            (os/canonical-entity-id entity-id))]
+    (cond
+      (os/attr? entity-id)
+      (or (-> entity-id os/pull ::info :input-type)
+          (os/attr-entity-id entity-id))
+
+      :else entity-id)))
+
+(defn get-input-options
+  [entity-id]
+  (when-let [entity-id (and (os/registered? entity-id)
+                            (os/canonical-entity-id entity-id))]
+    (when (os/attr? ))
+    (cond
+      (os/attr? entity-id)
+      (or (-> entity-id os/pull ::info :input-type)
+          (os/attr-entity-id entity-id))
+
+      :else entity-id)))
+
+(defn get-help
+  [entity-id]
+  (when-let [entity-id (and (os/registered? entity-id)
+                            (os/canonical-entity-id entity-id))]
+    (-> entity-id os/pull ::info :help)))
+
 ;;; --------------------------------------------------------------------------------
 
 (defn- kind-dispatcher
