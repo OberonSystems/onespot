@@ -105,13 +105,13 @@
                                 :or   {array-type :text}}]
   (let [sql (-> (h/update table)
                 (h/set {column [:remove_from_array column
-                                 [:cast tag-id array-type]]})
+                                [:cast tag-id array-type]]})
                 (h/where [:and where
                           ;; Should be able to use [:any :tags] below
                           ;; but there is a bug somewhere deep in
                           ;; HoneySQL related to treating :any as an
                           ;; operator.
-                           [:= tag-id [:raw "ANY(tags)"]]]))]
+                          [:= tag-id [:raw "ANY(tags)"]]]))]
     (execute-sql sql debug?)))
 
 (defn rename-tag
