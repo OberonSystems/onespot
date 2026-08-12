@@ -39,44 +39,67 @@
 
 ;;; --------------------------------------------------------------------------------
 
-(def order-by* #(apply h/order-by %1 %2))
 (def group-by* #(apply h/group-by %1 %2))
 
-(defn select*
-  ([prefix colls]
-   (select* nil prefix colls))
+(defn prefix-colls
+  [prefix colls]
+  (when-let [colls (->> colls
+                        (remove nil?)
+                        seq)]
+    (if prefix
+      (map (fn [col]
+             (cond
+                ; Handle [:column :as-this-name]
+               (vector? col) (let [[col as] col]
+                               [(prefix-keyword prefix col)
+                                as])
+                ; Otherwise we treat it like a keyword and let it
+                ; blow up if it isn't a keyword.
+               :else (prefix-keyword prefix col)))
+           colls)
+      colls)))
+
+(defn order-by*
+  ([colls]
+   (order-by* nil nil colls))
+
+  ([sql-or-prefix colls]
+   (if (map? sql-or-prefix)
+     (order-by* sql-or-prefix nil           colls)
+     (order-by* nil           sql-or-prefix colls)))
+
   ([sql prefix colls]
-   (->> colls
-        (remove nil?)
-        (map (fn [col]
-               (cond
-                 ;; Handle [:column :as-this-name]
-                 (vector? col) (let [[col as] col]
-                                 [(prefix-keyword prefix col)
-                                  as])
-                 ;; Otherwise we treat it like a keyword and let it
-                 ;; blow up if it isn't a keyword.
-                 :else (prefix-keyword prefix col))))
-        (into (if sql [sql] []))
-        (apply h/select))))
+   (some->> (prefix-colls prefix colls)
+            (into (if sql [sql] []))
+            (apply h/order-by))))
+
+(defn select*
+  ([colls]
+   (select* nil nil colls))
+
+  ([sql-or-prefix colls]
+   (if (map? sql-or-prefix)
+     (select* sql-or-prefix nil           colls)
+     (select* nil           sql-or-prefix colls)))
+
+  ([sql prefix colls]
+   (some->> (prefix-colls prefix colls)
+            (into (if sql [sql] []))
+            (apply h/select))))
 
 (defn select-distinct*
-  ([prefix colls]
-   (select* nil prefix colls))
+  ([colls]
+   (select-distinct* nil nil colls))
+
+  ([sql-or-prefix colls]
+   (if (map? sql-or-prefix)
+     (select-distinct* sql-or-prefix nil           colls)
+     (select-distinct* nil           sql-or-prefix colls)))
+
   ([sql prefix colls]
-   (->> colls
-        (remove nil?)
-        (map (fn [col]
-               (cond
-                 ;; Handle [:column :as-this-name]
-                 (vector? col) (let [[col as] col]
-                                 [(prefix-keyword prefix col)
-                                  as])
-                 ;; Otherwise we treat it like a keyword and let it
-                 ;; blow up if it isn't a keyword.
-                 :else (prefix-keyword prefix col))))
-        (into (if sql [sql] []))
-        (apply h/select-distinct))))
+   (some->> (prefix-colls prefix colls)
+            (into (if sql [sql] []))
+            (apply h/select-distinct))))
 
 (defn page-by
   [sql {{:keys [index size]} :page}]
